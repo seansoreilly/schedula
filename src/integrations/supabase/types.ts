@@ -9,7 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      availability: {
+        Row: {
+          available_date: string
+          created_at: string
+          end_time: string
+          id: string
+          meeting_id: string
+          participant_name: string
+          start_time: string
+        }
+        Insert: {
+          available_date: string
+          created_at?: string
+          end_time: string
+          id?: string
+          meeting_id: string
+          participant_name: string
+          start_time: string
+        }
+        Update: {
+          available_date?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          meeting_id?: string
+          participant_name?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          creator_name: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_name: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_name?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
