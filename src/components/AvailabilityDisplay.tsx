@@ -33,6 +33,14 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  // Get avatar icon for each unique participant
+  const getAvatarIcon = (participantName: string) => {
+    const avatars = ['😸', '🐶', '🐰', '🦊', '🐼', '🐨', '🐸', '🐵', '🦁', '🐯', '🐷', '🐮'];
+    const uniqueParticipants = [...new Set(availability.map(a => a.participant_name))];
+    const index = uniqueParticipants.indexOf(participantName);
+    return avatars[index % avatars.length];
+  };
+
   // Group availability by date
   const groupedAvailability = availability.reduce((acc, item) => {
     const date = item.available_date;
@@ -96,7 +104,7 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                       className="flex items-center justify-between p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-200"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="text-2xl">😸</div>
+                        <div className="text-2xl">{getAvatarIcon(item.participant_name)}</div>
                         <Badge variant="secondary" className="font-medium bg-green-200 text-green-800 border border-green-300">
                           {item.participant_name}
                         </Badge>

@@ -2,12 +2,14 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AddAvailability from "./AddAvailability";
 import AvailabilityDisplay from "./AvailabilityDisplay";
 import ShareMeeting from "./ShareMeeting";
-import { Calendar } from "lucide-react";
+import { Calendar, Edit3, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Meeting {
   id: string;
@@ -29,6 +31,8 @@ const MeetingView = () => {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [availability, setAvailability] = useState<Availability[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
   const { toast } = useToast();
 
   const fetchMeetingData = async () => {
@@ -44,6 +48,7 @@ const MeetingView = () => {
 
       if (meetingError) throw meetingError;
       setMeeting(meetingData);
+      setEditedTitle(meetingData.title);
 
       // Fetch availability data
       const { data: availabilityData, error: availabilityError } = await supabase
@@ -65,6 +70,38 @@ const MeetingView = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTitleUpdate = async () => {
+    if (!meeting || !editedTitle.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("meetings")
+        .update({ title: editedTitle.trim() })
+        .eq("id", meeting.id);
+
+      if (error) throw error;
+
+      setMeeting({ ...meeting, title: editedTitle.trim() });
+      setIsEditingTitle(false);
+      toast({
+        title: "✅ Title Updated!",
+        description: "Meeting title has been successfully updated.",
+      });
+    } catch (error) {
+      console.error("Error updating title:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update title. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedTitle(meeting?.title || "");
+    setIsEditingTitle(false);
   };
 
   useEffect(() => {
@@ -109,8 +146,49 @@ const MeetingView = () => {
         <CardHeader>
           <div className="flex items-center gap-4">
             <div className="text-4xl">🎯</div>
-            <div>
-              <CardTitle className="text-3xl font-bold">{meeting.title}</CardTitle>
+            <div className="flex-1">
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    className="text-2xl font-bold bg-white/20 border-white/30 text-white placeholder-white/70 focus:bg-white/30"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleTitleUpdate();
+                      if (e.key === 'Escape') handleCancelEdit();
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    onClick={handleTitleUpdate}
+                    size="sm"
+                    variant="ghost"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={handleCancelEdit}
+                    size="sm"
+                    variant="ghost"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group">
+                  <CardTitle className="text-3xl font-bold">{meeting.title}</CardTitle>
+                  <Button
+                    onClick={() => setIsEditingTitle(true)}
+                    size="sm"
+                    variant="ghost"
+                    className="text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <p className="text-indigo-100 mt-2 text-lg">Created by {meeting.creator_name}</p>
             </div>
           </div>
