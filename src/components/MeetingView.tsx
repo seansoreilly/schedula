@@ -78,8 +78,9 @@ const MeetingView = () => {
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card>
+        <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
           <CardContent className="p-8 text-center">
+            <div className="text-6xl mb-4">🐱</div>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading meeting...</p>
           </CardContent>
@@ -91,8 +92,9 @@ const MeetingView = () => {
   if (!meeting) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card>
+        <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
           <CardContent className="p-8 text-center">
+            <div className="text-6xl mb-4">😿</div>
             <p className="text-gray-600">Meeting not found</p>
           </CardContent>
         </Card>
@@ -103,13 +105,13 @@ const MeetingView = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Meeting Header */}
-      <Card>
+      <Card className="border-2 border-indigo-200 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl">
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <Calendar className="h-6 w-6 text-blue-600" />
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🎯</div>
             <div>
-              <CardTitle className="text-2xl">{meeting.title}</CardTitle>
-              <p className="text-gray-600 mt-1">Created by {meeting.creator_name}</p>
+              <CardTitle className="text-3xl font-bold">{meeting.title}</CardTitle>
+              <p className="text-indigo-100 mt-2 text-lg">Created by {meeting.creator_name}</p>
             </div>
           </div>
         </CardHeader>

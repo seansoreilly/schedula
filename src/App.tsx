@@ -16,7 +16,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-cyan-100">
           <div className="container mx-auto px-4 py-8">
             <Routes>
               <Route path="/" element={<CreateMeeting />} />
