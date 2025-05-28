@@ -2,6 +2,8 @@
 
 Schedula is a web application designed to simplify the process of finding the perfect meeting time for a group of people. Users can create a meeting event, share a unique link, and participants can then indicate their availability. Schedula visualizes all submitted availabilities, making it easy to identify overlapping times that work for everyone.
 
+![Schedula Screenshot](./public/schedula-screenshot.png)
+
 ## ✨ Features
 
 - **Create Meetings:** Quickly set up a new meeting event with a title and your name.
