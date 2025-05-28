@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users } from "lucide-react";
@@ -17,19 +16,19 @@ interface AvailabilityDisplayProps {
 
 const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
+    const [hours, minutes] = timeString.split(":");
     const hour24 = parseInt(hours);
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    const ampm = hour24 >= 12 ? "PM" : "AM";
     return `${hour12}:${minutes} ${ampm}`;
   };
 
@@ -50,6 +49,39 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
     acc[date].push(item);
     return acc;
   }, {} as Record<string, Availability[]>);
+
+  // List of emojis for participants
+  const emojiList = [
+    "🐶",
+    "🐱",
+    "🐰",
+    "🦊",
+    "🐻",
+    "🐼",
+    "🐨",
+    "🐯",
+    "🦁",
+    "🐮",
+    "🐷",
+    "🐸",
+    "🐒",
+    "🐔",
+    "🐧",
+    "🐦",
+  ];
+  const defaultEmoji = "🐾"; // Using a paw print as a default for pets
+
+  // Function to get a consistent emoji for a participant name
+  const getEmojiForName = (name: string): string => {
+    if (!name) return defaultEmoji;
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = (hash << 5) - hash + name.charCodeAt(i);
+      hash |= 0; // Convert to 32bit integer
+    }
+    const index = Math.abs(hash) % emojiList.length;
+    return emojiList[index];
+  };
 
   const sortedDates = Object.keys(groupedAvailability).sort();
 
@@ -90,7 +122,10 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
       <CardContent className="p-6">
         <div className="space-y-6">
           {sortedDates.map((date) => (
-            <div key={date} className="border-l-4 border-green-500 pl-4 bg-white p-4 rounded-lg shadow-sm">
+            <div
+              key={date}
+              className="border-l-4 border-green-500 pl-4 bg-white p-4 rounded-lg shadow-sm"
+            >
               <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-green-700">
                 <Calendar className="h-4 w-4" />
                 {formatDate(date)}
@@ -104,13 +139,19 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                       className="flex items-center justify-between p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-200"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="text-2xl">{getAvatarIcon(item.participant_name)}</div>
-                        <Badge variant="secondary" className="font-medium bg-green-200 text-green-800 border border-green-300">
+                        <div className="text-2xl">
+                          {getEmojiForName(item.participant_name)}
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="font-medium bg-green-200 text-green-800 border border-green-300"
+                        >
                           {item.participant_name}
                         </Badge>
                         <div className="flex items-center gap-1 text-sm text-gray-600 bg-white px-2 py-1 rounded border">
                           <Clock className="h-3 w-3" />
-                          {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                          {formatTime(item.start_time)} -{" "}
+                          {formatTime(item.end_time)}
                         </div>
                       </div>
                     </div>
