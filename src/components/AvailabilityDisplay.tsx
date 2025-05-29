@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users } from "lucide-react";
-import { useState, useEffect } from "react";
+        import { useState, useEffect } from "react";
 
 interface Availability {
   id: string;
