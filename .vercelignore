@@ -3,8 +3,8 @@
 .env.development
 .env.test
 
-# Source files (build output is in dist/)
-src/
+# Source files (needed for Vite build)
+# public markdown files can still be ignored if not needed
 public/*.md
 
 # Development dependencies and tooling
@@ -35,14 +35,7 @@ docs/
 *.md
 !README.md
 
-# Build tooling config
-vite.config.ts
-vitest.config.ts
-tailwind.config.ts
-postcss.config.js
-eslint.config.js
-tsconfig.*.json
-components.json
+# Build tooling config should be included for proper build
 
 # Development logs
 logs/
