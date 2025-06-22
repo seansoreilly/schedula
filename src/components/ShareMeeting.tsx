@@ -52,25 +52,23 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-      <CardHeader className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-3 text-xl font-semibold">
-          <div className="bg-white/20 p-2 rounded-lg">
-            <Share2 className="h-6 w-6" />
-          </div>
-          <div>Share This Meeting</div>
+    <Card className="shadow-sm border border-slate-200 bg-white">
+      <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <Share2 className="h-5 w-5" />
+          Share This Meeting
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-6">
         <p className="text-slate-600 text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
-          Share this link with participants so they can add their availability:
+          Share this link with team members so they can add their availability:
         </p>
 
         <div className="flex gap-2">
           <Input
             value={meetingUrl}
             readOnly
-            className="font-mono text-sm border-slate-300 focus:border-blue-500"
+            className="font-mono text-sm border-slate-300 focus:border-slate-500"
           />
           <Button
             onClick={handleCopyUrl}
@@ -79,7 +77,7 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
             className="shrink-0 border-slate-300 hover:bg-slate-100"
           >
             {copied ? (
-              <Check className="h-4 w-4 text-green-600" />
+              <Check className="h-4 w-4 text-emerald-600" />
             ) : (
               <Copy className="h-4 w-4" />
             )}
@@ -88,7 +86,7 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
 
         <Button
           onClick={handleShare}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 text-lg shadow-md transition-colors duration-200"
+          className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 text-base shadow-sm transition-colors duration-200"
         >
           <Share2 className="h-5 w-5 mr-2" />
           Share Meeting

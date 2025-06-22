@@ -129,13 +129,11 @@ const AddAvailability = ({
   const timeOptions = generateTimeOptions();
 
   return (
-    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-      <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-3 text-xl font-semibold">
-          <div className="bg-white/20 p-2 rounded-lg">
-            <Plus className="h-6 w-6" />
-          </div>
-          <div>Add Your Availability</div>
+    <Card className="shadow-sm border border-slate-200 bg-white">
+      <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <Plus className="h-5 w-5" />
+          Add Your Availability
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">

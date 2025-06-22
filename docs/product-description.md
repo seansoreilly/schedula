@@ -85,7 +85,7 @@ Schedula addresses the universal business challenge of coordinating meetings acr
 
 ### 1. **Simplicity Over Complexity**
 
-Unlike enterprise scheduling tools that require extensive setup and training, Schedula focuses on core functionality with an intuitive interface.
+Unlike Easy scheduling tools that require extensive setup and training, Schedula focuses on core functionality with an intuitive interface.
 
 ### 2. **No Account Barriers**
 

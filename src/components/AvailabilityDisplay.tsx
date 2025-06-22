@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users } from "lucide-react";
-        import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Availability {
   id: string;
@@ -28,7 +29,8 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
   >([]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString + "T00:00:00");
+    return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -38,29 +40,25 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
 
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(":");
-    const hour24 = parseInt(hours);
-    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-    const ampm = hour24 >= 12 ? "PM" : "AM";
-    return `${hour12}:${minutes} ${ampm}`;
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  // Helper function to convert HH:MM string to minutes since midnight
   const timeToMinutes = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
-  // Helper function to convert minutes since midnight to HH:MM string
   const minutesToTime = (totalMinutes: number): string => {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0"
-    )}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  // Helper function to check if two arrays of participant names are identical
   const areParticipantArraysEqual = (
     arr1: string[],
     arr2: string[]
@@ -71,27 +69,40 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
     return sortedArr1.every((value, index) => value === sortedArr2[index]);
   };
 
-  // Get avatar icon for each unique participant
-  const getAvatarIcon = (participantName: string) => {
-    const avatars = [
-      "😸",
-      "🐶",
-      "🐰",
-      "🦊",
-      "🐼",
-      "🐨",
-      "🐸",
-      "🐵",
-      "🦁",
-      "🐯",
-      "🐷",
-      "🐮",
+  // Professional avatar color system
+  const getAvatarColor = (participantName: string) => {
+    const colors = [
+      "bg-blue-500 text-white",
+      "bg-emerald-500 text-white",
+      "bg-purple-500 text-white",
+      "bg-orange-500 text-white",
+      "bg-pink-500 text-white",
+      "bg-teal-500 text-white",
+      "bg-indigo-500 text-white",
+      "bg-red-500 text-white",
+      "bg-yellow-500 text-black",
+      "bg-green-500 text-white",
+      "bg-cyan-500 text-white",
+      "bg-rose-500 text-white",
     ];
-    const uniqueParticipants = [
-      ...new Set(availability.map((a) => a.participant_name)),
-    ];
-    const index = uniqueParticipants.indexOf(participantName);
-    return avatars[index % avatars.length];
+
+    let hash = 0;
+    for (let i = 0; i < participantName.length; i++) {
+      hash = (hash << 5) - hash + participantName.charCodeAt(i);
+      hash |= 0;
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  // Get initials from participant name
+  const getInitials = (name: string): string => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join("");
   };
 
   // Group availability by date
@@ -103,39 +114,6 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
     acc[date].push(item);
     return acc;
   }, {} as Record<string, Availability[]>);
-
-  // List of emojis for participants
-  const emojiList = [
-    "🐶",
-    "🐱",
-    "🐰",
-    "🦊",
-    "🐻",
-    "🐼",
-    "🐨",
-    "🐯",
-    "🦁",
-    "🐮",
-    "🐷",
-    "🐸",
-    "🐒",
-    "🐔",
-    "🐧",
-    "🐦",
-  ];
-  const defaultEmoji = "🐾"; // Using a paw print as a default for pets
-
-  // Function to get a consistent emoji for a participant name
-  const getEmojiForName = (name: string): string => {
-    if (!name) return defaultEmoji;
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = (hash << 5) - hash + name.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
-    }
-    const index = Math.abs(hash) % emojiList.length;
-    return emojiList[index];
-  };
 
   useEffect(() => {
     if (availability.length < 2) {
@@ -226,21 +204,24 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
 
   if (availability.length === 0) {
     return (
-      <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-t-lg">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="text-3xl">👥</div>
-            <div>
-              <Users className="h-5 w-5 inline mr-2" />
-              Availability
-            </div>
+      <Card className="border border-slate-200 bg-white shadow-sm">
+        <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <Users className="h-5 w-5" />
+            Team Availability
           </CardTitle>
         </CardHeader>
         <CardContent className="p-8">
-          <div className="text-center py-8 text-gray-500">
-            <div className="text-8xl mb-4">😺</div>
-            <p className="text-lg font-semibold">No availability added yet.</p>
-            <p className="text-sm">Be the first to share your availability!</p>
+          <div className="text-center py-8 text-slate-500">
+            <div className="w-20 h-20 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+              <Calendar className="h-10 w-10 text-slate-400" />
+            </div>
+            <p className="text-lg font-medium text-slate-700">
+              No availability submitted yet
+            </p>
+            <p className="text-sm text-slate-500 mt-1">
+              Team members can add their availability above
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -248,14 +229,11 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
   }
 
   return (
-    <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-3 text-xl">
-          <div className="text-3xl">📅</div>
-          <div>
-            <Users className="h-5 w-5 inline mr-2" />
-            Availability ({availability.length} entries)
-          </div>
+    <Card className="border border-slate-200 bg-white shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <Users className="h-5 w-5" />
+          Team Availability ({availability.length} submissions)
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
@@ -263,35 +241,39 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
           {sortedDates.map((date) => (
             <div
               key={date}
-              className="border-l-4 border-green-500 pl-4 bg-white p-4 rounded-lg shadow-sm"
+              className="border-l-4 border-blue-500 pl-4 bg-slate-50/50 p-4 rounded-lg shadow-sm"
             >
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-green-700">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                 <Calendar className="h-4 w-4" />
                 {formatDate(date)}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {groupedAvailability[date]
                   .sort((a, b) => a.start_time.localeCompare(b.start_time))
                   .map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-200"
+                      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">
-                          {getEmojiForName(item.participant_name)}
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className="font-medium bg-green-200 text-green-800 border border-green-300"
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback
+                          className={`text-sm font-semibold ${getAvatarColor(
+                            item.participant_name
+                          )}`}
                         >
-                          {item.participant_name}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-sm text-gray-600 bg-white px-2 py-1 rounded border">
-                          <Clock className="h-3 w-3" />
-                          {formatTime(item.start_time)} -{" "}
-                          {formatTime(item.end_time)}
-                        </div>
+                          {getInitials(item.participant_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Badge
+                        variant="secondary"
+                        className="font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                      >
+                        {item.participant_name}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
+                        <Clock className="h-3 w-3" />
+                        {formatTime(item.start_time)} -{" "}
+                        {formatTime(item.end_time)}
                       </div>
                     </div>
                   ))}
@@ -303,50 +285,51 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
         {/* Display Common Availability Slots */}
         {processedCommonSlots.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4 text-blue-700 flex items-center gap-2">
-              <Users className="h-6 w-6" /> Common Availability Slots
+            <h2 className="text-xl font-semibold mb-4 text-slate-700 flex items-center gap-2">
+              <Users className="h-5 w-5" /> Overlapping Availability
             </h2>
-            <div className="space-y-6">
+            <div className="space-y-4">
               {processedCommonSlots.map((commonSlot, index) => (
                 <div
                   key={`common-${index}-${commonSlot.date}`}
-                  className="border-l-4 border-blue-500 pl-4 bg-white p-4 rounded-lg shadow-sm"
+                  className="border-l-4 border-emerald-500 pl-4 bg-emerald-50/50 p-4 rounded-lg shadow-sm"
                 >
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-blue-700">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                     <Calendar className="h-4 w-4" />
                     {formatDate(commonSlot.date)}
                   </h3>
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-100 to-sky-100 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {" "}
-                      {/* Added flex-wrap */}
-                      <div className="flex -space-x-2 overflow-hidden">
-                        {commonSlot.participants.map((name, idx) => (
-                          <span
-                            key={`${name}-${idx}-emoji-common`}
-                            className="text-2xl inline-block ring-2 ring-white rounded-full"
-                            title={name}
+                  <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-emerald-200">
+                    <div className="flex -space-x-2">
+                      {commonSlot.participants.map((name, idx) => (
+                        <Avatar
+                          key={`${name}-${idx}-avatar-common`}
+                          className="h-8 w-8 ring-2 ring-white"
+                        >
+                          <AvatarFallback
+                            className={`text-sm font-semibold ${getAvatarColor(
+                              name
+                            )}`}
                           >
-                            {getEmojiForName(name)}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {commonSlot.participants.map((name) => (
-                          <Badge
-                            key={`${commonSlot.date}-${commonSlot.startTime}-${name}-common-badge`}
-                            variant="secondary"
-                            className="font-medium bg-blue-200 text-blue-800 border border-blue-300"
-                          >
-                            {name}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-600 bg-white px-2 py-1 rounded border">
-                        <Clock className="h-3 w-3" />
-                        {formatTime(commonSlot.startTime)} -{" "}
-                        {formatTime(commonSlot.endTime)}
-                      </div>
+                            {getInitials(name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {commonSlot.participants.map((name) => (
+                        <Badge
+                          key={`${commonSlot.date}-${commonSlot.startTime}-${name}-common-badge`}
+                          variant="secondary"
+                          className="font-medium bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        >
+                          {name}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(commonSlot.startTime)} -{" "}
+                      {formatTime(commonSlot.endTime)}
                     </div>
                   </div>
                 </div>
