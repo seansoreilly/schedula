@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,12 +50,13 @@ const MeetingView = () => {
       setEditedTitle(meetingData.title);
 
       // Fetch availability data
-      const { data: availabilityData, error: availabilityError } = await supabase
-        .from("availability")
-        .select("*")
-        .eq("meeting_id", meetingId)
-        .order("available_date", { ascending: true })
-        .order("start_time", { ascending: true });
+      const { data: availabilityData, error: availabilityError } =
+        await supabase
+          .from("availability")
+          .select("*")
+          .eq("meeting_id", meetingId)
+          .order("available_date", { ascending: true })
+          .order("start_time", { ascending: true });
 
       if (availabilityError) throw availabilityError;
       setAvailability(availabilityData || []);
@@ -86,7 +86,7 @@ const MeetingView = () => {
       setMeeting({ ...meeting, title: editedTitle.trim() });
       setIsEditingTitle(false);
       toast({
-        title: "✅ Title Updated!",
+        title: "Title Updated Successfully",
         description: "Meeting title has been successfully updated.",
       });
     } catch (error) {
@@ -115,11 +115,12 @@ const MeetingView = () => {
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+        <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <div className="text-6xl mb-4">🐱</div>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading meeting...</p>
+            <p className="mt-4 text-slate-600 font-medium">
+              Loading meeting details...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -129,10 +130,17 @@ const MeetingView = () => {
   if (!meeting) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+        <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <div className="text-6xl mb-4">😿</div>
-            <p className="text-gray-600">Meeting not found</p>
+            <div className="text-red-500 mb-4">
+              <Calendar className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">
+              Meeting Not Found
+            </h3>
+            <p className="text-slate-600">
+              The meeting you're looking for doesn't exist or has been removed.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -142,10 +150,12 @@ const MeetingView = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Meeting Header */}
-      <Card className="border-2 border-indigo-200 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl">
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <CardHeader>
           <div className="flex items-center gap-4">
-            <div className="text-4xl">🎯</div>
+            <div className="bg-white/20 p-3 rounded-lg">
+              <Calendar className="h-8 w-8 text-white" />
+            </div>
             <div className="flex-1">
               {isEditingTitle ? (
                 <div className="flex items-center gap-2">
@@ -154,8 +164,8 @@ const MeetingView = () => {
                     onChange={(e) => setEditedTitle(e.target.value)}
                     className="text-2xl font-bold bg-white/20 border-white/30 text-white placeholder-white/70 focus:bg-white/30"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleTitleUpdate();
-                      if (e.key === 'Escape') handleCancelEdit();
+                      if (e.key === "Enter") handleTitleUpdate();
+                      if (e.key === "Escape") handleCancelEdit();
                     }}
                     autoFocus
                   />
@@ -178,7 +188,9 @@ const MeetingView = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 group">
-                  <CardTitle className="text-3xl font-bold">{meeting.title}</CardTitle>
+                  <CardTitle className="text-3xl font-bold">
+                    {meeting.title}
+                  </CardTitle>
                   <Button
                     onClick={() => setIsEditingTitle(true)}
                     size="sm"
@@ -189,7 +201,9 @@ const MeetingView = () => {
                   </Button>
                 </div>
               )}
-              <p className="text-indigo-100 mt-2 text-lg">Created by {meeting.creator_name}</p>
+              <p className="text-blue-100 mt-2 text-lg font-medium">
+                Organized by {meeting.creator_name}
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -199,8 +213,8 @@ const MeetingView = () => {
       <ShareMeeting meetingId={meeting.id} />
 
       {/* Add Availability */}
-      <AddAvailability 
-        meetingId={meeting.id} 
+      <AddAvailability
+        meetingId={meeting.id}
         onAvailabilityAdded={handleAvailabilityAdded}
       />
 

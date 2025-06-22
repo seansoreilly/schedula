@@ -12,9 +12,14 @@ interface AddAvailabilityProps {
   onAvailabilityAdded: () => void;
 }
 
-const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProps) => {
+const AddAvailability = ({
+  meetingId,
+  onAvailabilityAdded,
+}: AddAvailabilityProps) => {
   const [participantName, setParticipantName] = useState("");
-  const [availableDate, setAvailableDate] = useState(new Date().toISOString().split('T')[0]);
+  const [availableDate, setAvailableDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +27,7 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
 
   // Load name from localStorage on component mount
   useEffect(() => {
-    const savedName = localStorage.getItem('schedulaUserName');
+    const savedName = localStorage.getItem("schedulaUserName");
     if (savedName) {
       setParticipantName(savedName);
     }
@@ -31,22 +36,22 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
   // Save name to localStorage whenever it changes
   useEffect(() => {
     if (participantName.trim()) {
-      localStorage.setItem('schedulaUserName', participantName.trim());
+      localStorage.setItem("schedulaUserName", participantName.trim());
     }
   }, [participantName]);
 
   // Auto-calculate end time when start time changes
   useEffect(() => {
     if (startTime) {
-      const [hours, minutes] = startTime.split(':').map(Number);
+      const [hours, minutes] = startTime.split(":").map(Number);
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
-      
+
       // Add 30 minutes
       const endDate = new Date(startDate.getTime() + 30 * 60000);
-      
-      const endHours = endDate.getHours().toString().padStart(2, '0');
-      const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+
+      const endHours = endDate.getHours().toString().padStart(2, "0");
+      const endMinutes = endDate.getMinutes().toString().padStart(2, "0");
       setEndTime(`${endHours}:${endMinutes}`);
     }
   }, [startTime]);
@@ -55,7 +60,9 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const timeString = `${hour.toString().padStart(2, "0")}:${minute
+          .toString()
+          .padStart(2, "0")}`;
         times.push(timeString);
       }
     }
@@ -86,28 +93,26 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
     setIsLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("availability")
-        .insert({
-          meeting_id: meetingId,
-          participant_name: participantName.trim(),
-          available_date: availableDate,
-          start_time: startTime,
-          end_time: endTime,
-        });
+      const { error } = await supabase.from("availability").insert({
+        meeting_id: meetingId,
+        participant_name: participantName.trim(),
+        available_date: availableDate,
+        start_time: startTime,
+        end_time: endTime,
+      });
 
       if (error) throw error;
 
       toast({
-        title: "🎉 Availability Added!",
-        description: "Your availability has been added successfully.",
+        title: "Availability Added Successfully",
+        description: "Your availability has been recorded for this meeting.",
       });
 
       // Reset form but keep name
-      setAvailableDate(new Date().toISOString().split('T')[0]);
+      setAvailableDate(new Date().toISOString().split("T")[0]);
       setStartTime("");
       setEndTime("");
-      
+
       onAvailabilityAdded();
     } catch (error) {
       console.error("Error adding availability:", error);
@@ -124,20 +129,22 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
   const timeOptions = generateTimeOptions();
 
   return (
-    <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-3 text-xl">
-          <div className="text-3xl">🐱</div>
-          <div>
-            <Plus className="h-5 w-5 inline mr-2" />
-            Add Your Availability
+    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+      <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
+        <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+          <div className="bg-white/20 p-2 rounded-lg">
+            <Plus className="h-6 w-6" />
           </div>
+          <div>Add Your Availability</div>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white p-4 rounded-lg border-2 border-purple-100">
-            <Label htmlFor="participantName" className="flex items-center gap-2 text-purple-700 font-semibold mb-2">
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <Label
+              htmlFor="participantName"
+              className="flex items-center gap-2 text-slate-700 font-semibold mb-2"
+            >
               <User className="h-4 w-4" />
               Your Name
             </Label>
@@ -147,13 +154,16 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
               placeholder="Enter your name"
               value={participantName}
               onChange={(e) => setParticipantName(e.target.value)}
-              className="border-purple-200 focus:border-purple-400 focus:ring-purple-400"
+              className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg border-2 border-blue-100">
-              <Label htmlFor="availableDate" className="flex items-center gap-2 text-blue-700 font-semibold mb-2">
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <Label
+                htmlFor="availableDate"
+                className="flex items-center gap-2 text-slate-700 font-semibold mb-2"
+              >
                 <Calendar className="h-4 w-4" />
                 Date
               </Label>
@@ -162,13 +172,16 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
                 type="date"
                 value={availableDate}
                 onChange={(e) => setAvailableDate(e.target.value)}
-                className="border-blue-200 focus:border-blue-400 focus:ring-blue-400"
-                min={new Date().toISOString().split('T')[0]}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                min={new Date().toISOString().split("T")[0]}
               />
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-green-100">
-              <Label htmlFor="startTime" className="flex items-center gap-2 text-green-700 font-semibold mb-2">
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <Label
+                htmlFor="startTime"
+                className="flex items-center gap-2 text-slate-700 font-semibold mb-2"
+              >
                 <Clock className="h-4 w-4" />
                 Start Time
               </Label>
@@ -176,7 +189,7 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
                 id="startTime"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-green-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select start time</option>
                 {timeOptions.map((time) => (
@@ -187,8 +200,11 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
               </select>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-orange-100">
-              <Label htmlFor="endTime" className="flex items-center gap-2 text-orange-700 font-semibold mb-2">
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <Label
+                htmlFor="endTime"
+                className="flex items-center gap-2 text-slate-700 font-semibold mb-2"
+              >
                 <Clock className="h-4 w-4" />
                 End Time
               </Label>
@@ -196,7 +212,7 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
                 id="endTime"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-orange-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Auto-filled (+30 min)</option>
                 {timeOptions.map((time) => (
@@ -208,19 +224,19 @@ const AddAvailability = ({ meetingId, onAvailabilityAdded }: AddAvailabilityProp
             </div>
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 text-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+          <Button
+            type="submit"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg shadow-md transition-colors duration-200"
             disabled={isLoading}
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Adding...
+                Adding Availability...
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xl">✨</span>
+                <Plus className="h-5 w-5" />
                 Add My Availability
               </div>
             )}

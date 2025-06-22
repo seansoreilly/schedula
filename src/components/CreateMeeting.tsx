@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ const CreateMeeting = () => {
 
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim() || !creatorName.trim()) {
       toast({
         title: "Missing Information",
@@ -64,17 +63,24 @@ const CreateMeeting = () => {
     <div className="max-w-md mx-auto">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center mb-4">
-          <Calendar className="h-8 w-8 text-blue-600 mr-2" />
-          <h1 className="text-3xl font-bold text-gray-900">Schedula</h1>
+          <Calendar className="h-10 w-10 text-blue-700 mr-3" />
+          <h1 className="text-4xl font-bold text-slate-800">Schedula</h1>
         </div>
-        <p className="text-gray-600">Find the perfect time for everyone</p>
+        <p className="text-slate-600 text-lg font-medium">
+          Professional Meeting Coordination Platform
+        </p>
+        <p className="text-slate-500 text-sm mt-1">
+          Streamline scheduling and eliminate coordination complexity
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-center">Create New Meeting</CardTitle>
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+          <CardTitle className="text-xl text-center font-semibold">
+            Create New Meeting
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <form onSubmit={handleCreateMeeting} className="space-y-4">
             <div>
               <Label htmlFor="title" className="flex items-center gap-2">
@@ -106,12 +112,12 @@ const CreateMeeting = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full"
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition-colors"
               disabled={isLoading}
             >
-              {isLoading ? "Creating..." : "Create Meeting"}
+              {isLoading ? "Creating Meeting..." : "Create Meeting"}
             </Button>
           </form>
         </CardContent>
