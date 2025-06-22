@@ -106,6 +106,7 @@ const AddAvailability = ({
       toast({
         title: "Availability Added Successfully",
         description: "Your availability has been recorded for this meeting.",
+        // className: "bg-light-green-100",
       });
 
       // Reset form but keep name
@@ -130,12 +131,12 @@ const AddAvailability = ({
 
   return (
     <Card className="shadow-sm border border-slate-200 bg-white">
-      <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+      {/* <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold">
           <Plus className="h-5 w-5" />
           Add Your Availability
         </CardTitle>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">

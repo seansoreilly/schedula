@@ -248,7 +248,7 @@ const MeetingView = () => {
       </Card>
 
       {/* Share Meeting */}
-      <ShareMeeting meetingId={meeting.id} />
+      <ShareMeeting meetingId={meeting.id} meetingTitle={meeting.title} />
 
       {/* Add Availability */}
       <AddAvailability

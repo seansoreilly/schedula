@@ -7,9 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ShareMeetingProps {
   meetingId: string;
+  meetingTitle?: string;
 }
 
-const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
+const ShareMeeting = ({
+  meetingId,
+  meetingTitle = "meeting",
+}: ShareMeetingProps) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
@@ -35,20 +39,40 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    // Check if Web Share API is supported (especially important for iOS)
+    if (navigator.share && navigator.canShare) {
+      const shareData = {
+        title: `Join my ${meetingTitle}`,
+        text: `Share your availability for this meeting`,
+        url: meetingUrl,
+      };
+
+      // Check if the data can be shared (iOS requirement)
+      if (navigator.canShare(shareData)) {
+        try {
+          await navigator.share(shareData);
+          return;
+        } catch (error) {
+          // User cancelled or share failed, fall back to copy
+          console.log("Share cancelled or failed:", error);
+        }
+      }
+    } else if (navigator.share) {
+      // Fallback for browsers that have share but not canShare
       try {
         await navigator.share({
-          title: "Join my meeting",
-          text: "Share your availability for this meeting",
+          title: `Join my ${meetingTitle}`,
+          text: `Share your availability for this meeting`,
           url: meetingUrl,
         });
+        return;
       } catch (error) {
-        // User cancelled the share or it failed
-        handleCopyUrl();
+        console.log("Share cancelled or failed:", error);
       }
-    } else {
-      handleCopyUrl();
     }
+
+    // Fallback to copy
+    handleCopyUrl();
   };
 
   return (
@@ -75,6 +99,7 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
             variant="outline"
             size="icon"
             className="shrink-0 border-slate-300 hover:bg-slate-100"
+            title="Copy link"
           >
             {copied ? (
               <Check className="h-4 w-4 text-emerald-600" />
@@ -82,15 +107,17 @@ const ShareMeeting = ({ meetingId }: ShareMeetingProps) => {
               <Copy className="h-4 w-4" />
             )}
           </Button>
-        </div>
 
-        <Button
-          onClick={handleShare}
-          className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 text-base shadow-sm transition-colors duration-200"
-        >
-          <Share2 className="h-5 w-5 mr-2" />
-          Share Meeting
-        </Button>
+          {/* iOS-optimized Share Button */}
+          <Button
+            onClick={handleShare}
+            size="icon"
+            className="shrink-0 bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-colors duration-200"
+            title="Share meeting"
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

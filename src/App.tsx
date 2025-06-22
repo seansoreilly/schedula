@@ -75,15 +75,10 @@ const App = () => (
                     <Building2 className="h-5 w-5" />
                     <span className="font-semibold">Schedula</span>
                   </div>
-                  <p className="text-slate-300 text-sm leading-relaxed">
-                    Professional meeting coordination platform designed for
-                    modern businesses. Streamline scheduling and eliminate
-                    coordination conflicts.
-                  </p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-4">Platform Features</h3>
+                  <h3 className="font-semibold mb-4">Features</h3>
                   <ul className="space-y-2 text-sm text-slate-300">
                     <li>• Smart availability matching</li>
                     <li>• Real-time collaboration</li>
@@ -92,7 +87,7 @@ const App = () => (
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-4">Business Solutions</h3>
+                  <h3 className="font-semibold mb-4">Can use for</h3>
                   <ul className="space-y-2 text-sm text-slate-300">
                     <li>• Team meetings & standups</li>
                     <li>• Client presentations</li>
