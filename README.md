@@ -295,6 +295,10 @@ If you encounter any issues or have questions:
 2. Search existing [issues](../../issues)
 3. Create a new issue with detailed information
 
+## Analytics
+
+This project now includes Google Analytics via the Google Tag (G-Z7WBMVTNYJ). The tracking snippet is injected in `index.html` so visits are measured automatically when deployed to Vercel.
+
 ---
 
 **Ready to transform your meeting coordination?** 🚀 [Get started with Schedula today!](#-local-development-setup)
