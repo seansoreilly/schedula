@@ -1,0 +1,79 @@
+# Development files
+.env*.local
+.env.development
+.env.test
+
+# Source files (build output is in dist/)
+src/
+public/*.md
+
+# Development dependencies and tooling
+node_modules/
+.vscode/
+.idea/
+
+# AI Development Tools
+.cursor/
+.taskmaster/
+.roo/
+.roomodes
+.windsurfrules
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+playwright/.auth/
+e2e/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Build tooling config
+vite.config.ts
+vitest.config.ts
+tailwind.config.ts
+postcss.config.js
+eslint.config.js
+tsconfig.*.json
+components.json
+
+# Development logs
+logs/
+*.log
+dev-debug.log
+
+# Cache directories
+.cache/
+.vite/
+.parcel-cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Package manager files (source control)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Local environment examples
+env.example
+.env.example 
