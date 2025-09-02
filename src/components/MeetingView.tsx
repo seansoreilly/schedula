@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
 import AddAvailability from "./AddAvailability";
 import AvailabilityDisplay from "./AvailabilityDisplay";
@@ -47,26 +47,14 @@ const MeetingView = () => {
 
     try {
       // Fetch meeting details
-      const { data: meetingData, error: meetingError } = await supabase
-        .from("meetings")
-        .select("*")
-        .eq("id", meetingId)
-        .single();
-
-      if (meetingError) throw meetingError;
+      const meetingData = await meetingQueries.findById(meetingId);
+      if (!meetingData) throw new Error("Meeting not found");
+      
       setMeeting(meetingData);
       setEditedTitle(meetingData.title);
 
       // Fetch availability data
-      const { data: availabilityData, error: availabilityError } =
-        await supabase
-          .from("availability")
-          .select("*")
-          .eq("meeting_id", meetingId)
-          .order("available_date", { ascending: true })
-          .order("start_time", { ascending: true });
-
-      if (availabilityError) throw availabilityError;
+      const availabilityData = await availabilityQueries.findByMeetingId(meetingId);
       setAvailability(availabilityData || []);
     } catch (error) {
       console.error("Error fetching meeting data:", error);
@@ -84,14 +72,13 @@ const MeetingView = () => {
     if (!meeting || !editedTitle.trim()) return;
 
     try {
-      const { error } = await supabase
-        .from("meetings")
-        .update({ title: editedTitle.trim() })
-        .eq("id", meeting.id);
+      const updatedMeeting = await meetingQueries.update(meeting.id, {
+        title: editedTitle.trim(),
+      });
 
-      if (error) throw error;
-
-      setMeeting({ ...meeting, title: editedTitle.trim() });
+      if (updatedMeeting) {
+        setMeeting(updatedMeeting);
+      }
       setIsEditingTitle(false);
       toast({
         title: "Meeting Title Updated",

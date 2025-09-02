@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { meetingQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
@@ -40,16 +40,10 @@ const CreateMeeting = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from("meetings")
-        .insert({
-          title: title.trim(),
-          creator_name: creatorName.trim(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await meetingQueries.create({
+        title: title.trim(),
+        creator_name: creatorName.trim(),
+      });
 
       toast({
         title: "Meeting Created Successfully!",

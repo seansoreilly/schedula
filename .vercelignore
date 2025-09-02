@@ -69,4 +69,10 @@ bun.lockb
 
 # Local environment examples
 env.example
-.env.example 
+.env.example
+
+# Database files (but allow API routes)
+schema.sql
+database.sql
+# Allow API routes
+!api/ 

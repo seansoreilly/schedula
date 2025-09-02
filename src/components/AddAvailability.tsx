@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
@@ -93,15 +93,13 @@ const AddAvailability = ({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.from("availability").insert({
+      await availabilityQueries.create({
         meeting_id: meetingId,
         participant_name: participantName.trim(),
         available_date: availableDate,
         start_time: startTime,
         end_time: endTime,
       });
-
-      if (error) throw error;
 
       toast({
         title: "Availability Added Successfully",
