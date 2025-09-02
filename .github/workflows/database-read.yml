@@ -26,45 +26,7 @@ jobs:
       - name: Run database read check
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node -e "
-          const { Pool } = require('pg');
-          
-          const pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: {
-              rejectUnauthorized: false,
-            },
-          });
-          
-          async function runDatabaseRead() {
-            try {
-              console.log('🔍 Starting database read check...');
-              
-              // Simple read operation - check if database is accessible
-              const result = await pool.query('SELECT NOW() as current_time, version() as db_version');
-              
-              console.log('✅ Database read successful!');
-              console.log('📅 Current time:', result.rows[0].current_time);
-              console.log('🔧 Database version:', result.rows[0].db_version.split(' ')[0]);
-              
-              // Optional: Check table count to verify schema exists
-              const tableCount = await pool.query(
-                \"SELECT count(*) as table_count FROM information_schema.tables WHERE table_schema = 'public'\"
-              );
-              
-              console.log('📊 Public tables count:', tableCount.rows[0].table_count);
-              
-              process.exit(0);
-            } catch (error) {
-              console.error('❌ Database read failed:', error.message);
-              process.exit(1);
-            } finally {
-              await pool.end();
-            }
-          }
-          
-          runDatabaseRead();
-        "
+        run: node .github/scripts/database-read.js
       
       - name: Report status
         if: always()
