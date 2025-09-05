@@ -1,15 +1,17 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Check if DATABASE_URL is set
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+// Supabase configuration
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ogdfhmnnhlmqwuhlikem.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseKey) {
+  throw new Error('Supabase anonymous key is required. Set VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY environment variable.');
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  db: {
+    schema: 'schedula',
   },
 });
 
@@ -37,50 +39,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const query = 'SELECT * FROM meetings WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Meeting not found' });
+      const { data: meeting, error } = await supabase
+        .from('meetings')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: 'Meeting not found' });
+        }
+        console.error('Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Database error',
+          details: error.message
+        });
       }
       
-      res.status(200).json(result.rows[0]);
+      res.status(200).json(meeting);
     } else if (req.method === 'PUT') {
       const { title, creator_name } = req.body as MeetingUpdate;
       
-      const fields = [];
-      const values = [];
-      let paramIndex = 1;
-
-      if (title) {
-        fields.push(`title = $${paramIndex++}`);
-        values.push(title);
-      }
-      if (creator_name) {
-        fields.push(`creator_name = $${paramIndex++}`);
-        values.push(creator_name);
-      }
-      
-      if (fields.length === 0) {
+      if (!title && !creator_name) {
         return res.status(400).json({ error: 'No fields to update' });
       }
-      
-      fields.push(`updated_at = NOW()`);
-      values.push(id);
 
-      const query = `
-        UPDATE meetings 
-        SET ${fields.join(', ')} 
-        WHERE id = $${paramIndex}
-        RETURNING *
-      `;
-      const result = await pool.query(query, values);
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Meeting not found' });
+      const updateData: Record<string, string> = { updated_at: new Date().toISOString() };
+      if (title) updateData.title = title;
+      if (creator_name) updateData.creator_name = creator_name;
+
+      const { data: meeting, error } = await supabase
+        .from('meetings')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: 'Meeting not found' });
+        }
+        console.error('Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Database error',
+          details: error.message
+        });
       }
       
-      res.status(200).json(result.rows[0]);
+      res.status(200).json(meeting);
     } else {
       res.status(405).json({ error: 'Method not allowed' });
     }
