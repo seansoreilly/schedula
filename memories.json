@@ -1,0 +1,44 @@
+{
+  "memories": [
+    {
+      "id": "mem_1757068347484_pqp9ze29u",
+      "content": "Found the meeting creation error source:\n1. Frontend calls meetingQueries.create() which posts to /api/meetings\n2. Backend API expects DATABASE_URL env var but may have connection issues\n3. API endpoint at /home/sean/projects/schedula/api/meetings/index.ts handles POST requests\n4. Database URL is set in .env file: postgres://neondb_owner:npg_xUGJmW92eqjF@ep-royal-mouse-adnjgxuo-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\n5. Error happens in catch block at CreateMeeting.tsx:54-61, showing \"Failed to create meeting\" message",
+      "type": "config",
+      "tags": [
+        "config",
+        "api",
+        "database",
+        "debugging",
+        "meeting-creation",
+        "error-analysis"
+      ],
+      "timestamp": "2025-09-05T10:32:27.484Z",
+      "context": "Investigating meeting creation error in schedula project",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-05T10:32:27.484Z",
+      "lastVerified": "2025-09-05T10:32:27.484Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757068395865_ekrl20sxr",
+      "content": "Found the exact error: API endpoint /api/meetings is returning 404 (Not Found). The error occurs because:\n1. Frontend is trying to POST to /api/meetings\n2. Server responds with 404, causing \"Network error\" \n3. This gets caught in CreateMeeting.tsx:54-61 and shows \"Failed to create meeting\"\n4. The API files exist in /api/meetings/ directory but are not being served properly\n5. This looks like a routing/server configuration issue, not a database issue",
+      "type": "config",
+      "tags": [
+        "config",
+        "api",
+        "database",
+        "404-error",
+        "api-routing",
+        "server-config",
+        "debugging"
+      ],
+      "timestamp": "2025-09-05T10:33:15.865Z",
+      "context": "Debugging meeting creation 404 error",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-05T10:33:15.865Z",
+      "lastVerified": "2025-09-05T10:33:15.865Z",
+      "status": "fresh"
+    }
+  ],
+  "lastUpdated": "2025-09-05T10:33:15.865Z"
+}

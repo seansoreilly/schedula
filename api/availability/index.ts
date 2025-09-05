@@ -1,15 +1,17 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Check if DATABASE_URL is set
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+// Supabase configuration
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ogdfhmnnhlmqwuhlikem.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseKey) {
+  throw new Error('Supabase anonymous key is required. Set VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY environment variable.');
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  db: {
+    schema: 'schedula',
   },
 });
 
@@ -40,29 +42,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'All fields are required' });
       }
 
-      // First ensure the table exists
-      const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS availability (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          meeting_id UUID NOT NULL,
-          participant_name TEXT NOT NULL,
-          available_date DATE NOT NULL,
-          start_time TIME NOT NULL,
-          end_time TIME NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
-        );
-      `;
-      await pool.query(createTableQuery);
+      const { data: availability, error } = await supabase
+        .from('availability')
+        .insert({
+          meeting_id,
+          participant_name,
+          available_date,
+          start_time,
+          end_time,
+        })
+        .select()
+        .single();
 
-      const query = `
-        INSERT INTO availability (meeting_id, participant_name, available_date, start_time, end_time, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
-        RETURNING *
-      `;
-      const result = await pool.query(query, [meeting_id, participant_name, available_date, start_time, end_time]);
+      if (error) {
+        console.error('Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Database error',
+          details: error.message
+        });
+      }
       
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(availability);
     } else if (req.method === 'GET') {
       const { meeting_id } = req.query;
       
@@ -70,10 +70,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Meeting ID is required' });
       }
 
-      const query = 'SELECT * FROM availability WHERE meeting_id = $1 ORDER BY available_date, start_time';
-      const result = await pool.query(query, [meeting_id]);
+      const { data: availability, error } = await supabase
+        .from('availability')
+        .select('*')
+        .eq('meeting_id', meeting_id)
+        .order('available_date')
+        .order('start_time');
+
+      if (error) {
+        console.error('Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Database error',
+          details: error.message
+        });
+      }
       
-      res.status(200).json(result.rows);
+      res.status(200).json(availability || []);
     } else {
       res.status(405).json({ error: 'Method not allowed' });
     }
