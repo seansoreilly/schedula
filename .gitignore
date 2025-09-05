@@ -52,6 +52,8 @@ blob-report/
 coverage/
 playwright-report/
 test-results/
+*.spec.ts
+MEETING_CREATION_FIX.md
 
 # Runtime data
 *.pid

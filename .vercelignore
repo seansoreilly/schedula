@@ -29,6 +29,8 @@ e2e/
 **/*.test.tsx
 **/*.spec.ts
 **/*.spec.tsx
+MEETING_CREATION_FIX.md
+start-dev.sh
 
 # Documentation
 docs/
