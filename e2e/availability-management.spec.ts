@@ -6,8 +6,8 @@ test.describe('Availability Management', () => {
   test.beforeEach(async ({ page }) => {
     // Create a meeting first
     await page.goto('/');
-    await page.fill('input[placeholder*="Meeting"]', 'E2E Test Meeting');
-    await page.fill('input[placeholder*="name"]', 'Test Organizer');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'E2E Test Meeting');
+    await page.fill('input[placeholder*="full name"]', 'Test Organizer');
     await page.click('button:has-text("Create Meeting")');
     
     // Wait for navigation and capture URL

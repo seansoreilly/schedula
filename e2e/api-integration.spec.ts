@@ -83,8 +83,8 @@ test.describe('API Integration Tests', () => {
     });
 
     await page.goto('/');
-    await page.fill('input[placeholder*="Meeting"]', 'Timeout Test');
-    await page.fill('input[placeholder*="name"]', 'Test User');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Timeout Test');
+    await page.fill('input[placeholder*="full name"]', 'Test User');
     
     // Should show loading state
     await page.click('button:has-text("Create Meeting")');
@@ -116,8 +116,8 @@ test.describe('API Integration Tests', () => {
     });
 
     await page.goto('/');
-    await page.fill('input[placeholder*="Meeting"]', 'Retry Test');
-    await page.fill('input[placeholder*="name"]', 'Retry User');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Retry Test');
+    await page.fill('input[placeholder*="full name"]', 'Retry User');
     await page.click('button:has-text("Create Meeting")');
 
     // Should show error first

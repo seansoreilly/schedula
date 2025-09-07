@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Meeting, Availability, MeetingInsert, AvailabilityInsert, MeetingUpdate } from '../neon/types';
+import { Meeting, Availability, MeetingInsert, AvailabilityInsert, MeetingUpdate } from '../supabase/types';
 
 export const meetingQueries = {
   async create(data: MeetingInsert): Promise<Meeting> {

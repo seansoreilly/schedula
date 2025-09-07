@@ -6,8 +6,8 @@ test.describe('Meeting Creation Flow', () => {
     await page.goto('/');
 
     // Fill in the meeting form
-    await page.fill('input[placeholder*="Meeting"]', 'Test Meeting for E2E');
-    await page.fill('input[placeholder*="name"]', 'Test Organizer');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Test Meeting for E2E');
+    await page.fill('input[placeholder*="full name"]', 'Test Organizer');
 
     // Submit the form
     await page.click('button:has-text("Create Meeting")');
@@ -39,7 +39,7 @@ test.describe('Meeting Creation Flow', () => {
     await page.click('button:has-text("Create Meeting")');
 
     // Should show validation message
-    await expect(page.locator('text=Missing Information, text=required')).toBeVisible();
+    await expect(page.locator('text=Missing Information').first()).toBeVisible();
   });
 
   test('should handle API errors gracefully', async ({ page }) => {
@@ -54,11 +54,11 @@ test.describe('Meeting Creation Flow', () => {
 
     await page.goto('/');
 
-    await page.fill('input[placeholder*="Meeting"]', 'Test Meeting');
-    await page.fill('input[placeholder*="name"]', 'Test User');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Test Meeting');
+    await page.fill('input[placeholder*="full name"]', 'Test User');
     await page.click('button:has-text("Create Meeting")');
 
     // Should show error message
-    await expect(page.locator('text=Error, text=Failed')).toBeVisible();
+    await expect(page.locator('text=Error').first()).toBeVisible();
   });
 });
