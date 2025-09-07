@@ -7,6 +7,28 @@ import { availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
+// Utility function to get the next 30-minute segment
+const getNextThirtyMinuteSegment = () => {
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const hours = now.getHours();
+  
+  // Round up to the next 30-minute mark
+  let nextMinutes: number;
+  let nextHours = hours;
+  
+  if (minutes === 0) {
+    nextMinutes = 30;
+  } else if (minutes <= 30) {
+    nextMinutes = 30;
+  } else {
+    nextMinutes = 0;
+    nextHours = (hours + 1) % 24;
+  }
+  
+  return `${nextHours.toString().padStart(2, "0")}:${nextMinutes.toString().padStart(2, "0")}`;
+};
+
 interface AddAvailabilityProps {
   meetingId: string;
   onAvailabilityAdded: () => void;
@@ -20,7 +42,7 @@ const AddAvailability = ({
   const [availableDate, setAvailableDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [startTime, setStartTime] = useState("");
+  const [startTime, setStartTime] = useState(getNextThirtyMinuteSegment());
   const [endTime, setEndTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -104,7 +126,6 @@ const AddAvailability = ({
       toast({
         title: "Availability Added Successfully",
         description: "Your availability has been recorded for this meeting.",
-        // className: "bg-light-green-100",
       });
 
       // Reset form but keep name
@@ -129,12 +150,6 @@ const AddAvailability = ({
 
   return (
     <Card className="shadow-sm border border-slate-200 bg-white">
-      {/* <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <Plus className="h-5 w-5" />
-          Add Your Availability
-        </CardTitle>
-      </CardHeader> */}
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
