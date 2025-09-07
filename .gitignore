@@ -55,6 +55,9 @@ test-results/
 *.spec.ts
 MEETING_CREATION_FIX.md
 
+# Memory and AI tools
+memories.json
+
 # Runtime data
 *.pid
 *.pid.lock
@@ -92,6 +95,7 @@ ehthumbs.db
 *.sln
 *.suo
 *.sw?
+**/*:Zone.Identifier
 
 # Project-specific
 .cursor/

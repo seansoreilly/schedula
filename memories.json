@@ -38,7 +38,472 @@
       "lastAccessed": "2025-09-05T10:33:15.865Z",
       "lastVerified": "2025-09-05T10:33:15.865Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1757146765564_onsb25u0l",
+      "content": "Task: Remove all Windows Zone.Identifier files and obsolete test files safely from the schedula project. This includes Zone.Identifier files in public/ and dist/, obsolete MCP-generated test files, and temporary files like MEETING_CREATION_FIX.md, memories.json, neon.txt, and test-summary.md.",
+      "type": "general",
+      "tags": [
+        "general",
+        "cleanup",
+        "zone-identifier",
+        "test-files",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:19:25.563Z",
+      "context": "Cleanup task for schedula project - removing Windows-generated metadata files and obsolete test files",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:19:25.563Z",
+      "lastVerified": "2025-09-06T08:19:25.563Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757146844127_ajntqxyb9",
+      "content": "Analysis of unused dependencies in schedula project:\n\nDEFINITELY UNUSED (confirmed through code search):\n- cors: Only appears in package.json, no imports found in source\n- express: Only appears in package.json, no imports found in source  \n- caniuse-lite: No direct imports found in source code\n- date-fns: No imports found in source code\n- zod: No imports found in source code\n\nPOTENTIALLY USED (needs verification):\n- @hookform/resolvers: Referenced in form.tsx but form.tsx may not be used\n- react-hook-form: Used in form.tsx component, but form.tsx may not be imported anywhere\n\nPackage manager conflict detected:\n- Both package-lock.json and bun.lockb exist\n- Both npm and bun are installed\n- Need to decide on single package manager",
+      "type": "general",
+      "tags": [
+        "general",
+        "express",
+        "react",
+        "dependencies",
+        "cleanup",
+        "package-management"
+      ],
+      "timestamp": "2025-09-06T08:20:44.127Z",
+      "context": "Dependency cleanup analysis for schedula project",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:20:44.127Z",
+      "lastVerified": "2025-09-06T08:20:44.127Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757146867645_0yyoa8e0y",
+      "content": "Cleanup completed successfully! Removed all Windows Zone.Identifier files and obsolete test files:\n\nREMOVED FILES:\n- Zone.Identifier files from public/: 7 files (favicon.ico, apple-touch-icon.png, android-chrome-192x192.png, android-chrome-512x512.png, favicon-16x16.png, favicon-32x32.png, site.webmanifest)\n- Obsolete MCP test files: meetingcreationmcp_c834dcfd-ea4f-459a-9544-63d2c6b6570f.spec.ts, playwright-mcp-meeting-test.spec.ts\n- Test results file: test-results/livemeetingtest_e97b7fa0-dd93-4383-8270-a5a3f3cd87da.spec.ts\n- Temporary files: MEETING_CREATION_FIX.md, memories.json, neon.txt, test-summary.md\n\nNOTE: dist/ directory Zone.Identifier files were not found because the dist/ directory doesn't currently exist (likely cleaned or not built yet).\n\nAll targeted files successfully removed with verification completed.",
+      "type": "general",
+      "tags": [
+        "general",
+        "cleanup",
+        "completed",
+        "zone-identifier",
+        "test-files",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:21:07.645Z",
+      "context": "Successful completion of cleanup task",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:21:07.645Z",
+      "lastVerified": "2025-09-06T08:21:07.645Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757146943664_6tlmhyhrk",
+      "content": "Successfully completed dependency cleanup for schedula project:\n\nREMOVED DEPENDENCIES:\n✅ cors - No imports found in source code\n✅ express - No imports found in source code  \n✅ caniuse-lite - No direct imports found in source code\n✅ date-fns - No imports found in source code\n✅ zod - No imports found in source code\n✅ @hookform/resolvers - Only used in unused form.tsx component\n✅ react-hook-form - Only used in unused form.tsx component\n\nPACKAGE MANAGER CONFLICT RESOLVED:\n✅ Removed bun.lockb file (older - June 22)\n✅ Kept package-lock.json (newer - September 5)\n✅ Standardized on npm for package management\n\nVERIFICATION:\n✅ Build still completes successfully after cleanup\n✅ Total of 63 packages removed (61 + 2 form-related)\n✅ Project functionality preserved",
+      "type": "solution",
+      "tags": [
+        "solution",
+        "express",
+        "react",
+        "cleanup",
+        "dependencies",
+        "npm",
+        "build-success"
+      ],
+      "timestamp": "2025-09-06T08:22:23.664Z",
+      "context": "Successful dependency cleanup results for schedula project",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:22:23.664Z",
+      "lastVerified": "2025-09-06T08:22:23.664Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147000985_05rivar5z",
+      "content": "Starting dead code cleanup task for schedula project. Need to verify and remove:\n1. src/pages/Index.tsx (duplicate routing)\n2. src/integrations/neon/client.ts (PostgreSQL client)\n3. src/integrations/neon/queries.ts (query implementation) \n4. src/integrations/redis/client.ts (Redis client)\n5. Remove unused Shield import from CreateMeeting.tsx\n\nWill verify these are truly unused before deletion.",
+      "type": "code",
+      "tags": [
+        "code",
+        "dead-code-cleanup",
+        "schedula",
+        "task-start"
+      ],
+      "timestamp": "2025-09-06T08:23:20.985Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:23:20.985Z",
+      "lastVerified": "2025-09-06T08:23:20.985Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147002482_noqezh0re",
+      "content": "Task: Remove unused shadcn/ui components. User provided list of 29+ components to delete. Need to verify they're truly unused by searching imports across the codebase before deletion.",
+      "type": "general",
+      "tags": [
+        "general",
+        "cleanup",
+        "shadcn-ui",
+        "components",
+        "unused-code"
+      ],
+      "timestamp": "2025-09-06T08:23:22.482Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:23:22.482Z",
+      "lastVerified": "2025-09-06T08:23:22.482Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147054015_at6gnjp2x",
+      "content": "Analysis of used vs unused dependencies in schedula project:\n\nUSED RADIX UI DEPENDENCIES (keep these):\n- @radix-ui/react-avatar (used in AvailabilityDisplay via avatar.tsx)\n- @radix-ui/react-dialog (used in App.tsx via sheet.tsx and command.tsx)\n- @radix-ui/react-dropdown-menu (may be used via sidebar.tsx)\n- @radix-ui/react-label (used in CreateMeeting, AddAvailability via label.tsx)\n- @radix-ui/react-separator (used via sidebar.tsx)\n- @radix-ui/react-slot (used in button.tsx, breadcrumb.tsx, form.tsx, sidebar.tsx)\n- @radix-ui/react-toast (used in App.tsx via toaster.tsx)\n- @radix-ui/react-tooltip (used in App.tsx and sidebar.tsx via tooltip.tsx)\n\nUNUSED RADIX UI DEPENDENCIES (confirmed safe to remove):\n- @radix-ui/react-accordion, alert-dialog, aspect-ratio, checkbox, collapsible, context-menu, hover-card, menubar, navigation-menu, popover, progress, radio-group, scroll-area, select, slider, switch, tabs, toggle, toggle-group\n\nUNUSED OTHER DEPENDENCIES (confirmed safe to remove):\n- @tailwindcss/typography (not used in any component)\n- embla-carousel-react (carousel.tsx not used in app)\n- vaul (drawer.tsx not used in app)\n- input-otp (input-otp.tsx not used in app)\n- react-resizable-panels (resizable.tsx not used in app)\n- recharts (chart.tsx not used in app)\n- cmdk (command.tsx not used in app)\n- react-day-picker (calendar.tsx not used in app)",
+      "type": "general",
+      "tags": [
+        "general",
+        "react"
+      ],
+      "timestamp": "2025-09-06T08:24:14.015Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:24:14.015Z",
+      "lastVerified": "2025-09-06T08:24:14.015Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147062047_bc7efcjni",
+      "content": "Verification complete for dead code cleanup:\n\nCONFIRMED UNUSED FILES:\n- src/pages/Index.tsx: BrowserRouter routing component, not imported anywhere\n- src/integrations/neon/client.ts: PostgreSQL client using 'pg' library, not imported\n- src/integrations/neon/queries.ts: Database query implementations, not imported\n- src/integrations/redis/client.ts: Vercel KV Redis client, not imported\n\nCONFIRMED UNUSED IMPORT:\n- CreateMeeting.tsx line 16: Shield from lucide-react (imported but never used)\n\nAll files verified to have no imports/references in src/ or api/ directories. Safe to delete.",
+      "type": "warning",
+      "tags": [
+        "warning",
+        "react",
+        "database",
+        "api",
+        "verification",
+        "dead-code-cleanup",
+        "ready-for-deletion"
+      ],
+      "timestamp": "2025-09-06T08:24:22.047Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:24:22.047Z",
+      "lastVerified": "2025-09-06T08:24:22.047Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147086926_2ydcoxuve",
+      "content": "Verified components currently used by the application: button, input, label, card, toaster, sonner, tooltip, badge, avatar. Safe to delete the 29+ unused components listed by user.",
+      "type": "general",
+      "tags": [
+        "general",
+        "verification",
+        "used-components",
+        "safe-to-delete"
+      ],
+      "timestamp": "2025-09-06T08:24:46.926Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:24:46.926Z",
+      "lastVerified": "2025-09-06T08:24:46.926Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147159436_jrrl5zh2u",
+      "content": "Dead code cleanup COMPLETED successfully:\n\nDELETED FILES:\n✅ /home/sean/projects/schedula/src/pages/Index.tsx (duplicate routing component)\n✅ /home/sean/projects/schedula/src/integrations/neon/client.ts (unused PostgreSQL client)\n✅ /home/sean/projects/schedula/src/integrations/neon/queries.ts (unused database queries)\n✅ /home/sean/projects/schedula/src/integrations/redis/client.ts (unused Redis client)\n✅ /home/sean/projects/schedula/src/integrations/redis/ (empty directory removed)\n\nCLEANED IMPORTS:\n✅ Removed unused Shield import from CreateMeeting.tsx line 16\n\nVERIFICATION:\n✅ Build passes successfully (npm run build)\n✅ No new lint errors introduced\n✅ All deleted files confirmed to have zero references in codebase",
+      "type": "code",
+      "tags": [
+        "code",
+        "database",
+        "cleanup-complete",
+        "dead-code-removal",
+        "build-verified"
+      ],
+      "timestamp": "2025-09-06T08:25:59.436Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:25:59.436Z",
+      "lastVerified": "2025-09-06T08:25:59.436Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147190011_tkjuqsqaz",
+      "content": "Successfully completed dependency cleanup for schedula project:\n\nREMOVED RADIX UI DEPENDENCIES (19 packages):\n- @radix-ui/react-accordion\n- @radix-ui/react-alert-dialog  \n- @radix-ui/react-aspect-ratio\n- @radix-ui/react-checkbox\n- @radix-ui/react-collapsible\n- @radix-ui/react-context-menu\n- @radix-ui/react-hover-card\n- @radix-ui/react-menubar\n- @radix-ui/react-navigation-menu\n- @radix-ui/react-popover\n- @radix-ui/react-progress\n- @radix-ui/react-radio-group\n- @radix-ui/react-scroll-area\n- @radix-ui/react-select\n- @radix-ui/react-slider\n- @radix-ui/react-switch\n- @radix-ui/react-tabs\n- @radix-ui/react-toggle\n- @radix-ui/react-toggle-group\n\nREMOVED OTHER DEPENDENCIES (8 packages):\n- @tailwindcss/typography\n- embla-carousel-react\n- vaul\n- input-otp\n- react-resizable-panels\n- recharts\n- cmdk\n- react-day-picker\n\nVERIFICATION RESULTS:\n- Build successful: ✅ (598.33 kB JavaScript bundle)\n- Dev server starts: ✅ (ready in 229 ms)\n- Total packages removed: 70 packages (49 + 21)\n- Final dependency count: Much leaner package.json",
+      "type": "general",
+      "tags": [
+        "general",
+        "javascript",
+        "react"
+      ],
+      "timestamp": "2025-09-06T08:26:30.011Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:26:30.011Z",
+      "lastVerified": "2025-09-06T08:26:30.011Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147263338_lirxv9ggk",
+      "content": "Successfully completed cleanup: Deleted 33 unused shadcn/ui components and removed 3 unused Radix UI dependencies from package.json. Kept only the components actually used by the application: button, input, label, card, toaster, sonner, tooltip, badge, avatar.",
+      "type": "general",
+      "tags": [
+        "general",
+        "cleanup-completed",
+        "shadcn-ui",
+        "dependencies-removed"
+      ],
+      "timestamp": "2025-09-06T08:27:43.338Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:27:43.338Z",
+      "lastVerified": "2025-09-06T08:27:43.338Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147356300_6cb6eondr",
+      "content": "Starting task to fix duplicate code patterns and consolidate implementations:\n1. Remove toast hook duplication (src/components/ui/use-toast.ts wrapper)\n2. Consolidate database schema files (keep supabase-schema.sql, remove schema.sql)\n3. Clean up commented code blocks in CreateMeeting.tsx and AddAvailability.tsx",
+      "type": "troubleshooting",
+      "tags": [
+        "troubleshooting",
+        "database",
+        "code-cleanup",
+        "consolidation",
+        "duplicates"
+      ],
+      "timestamp": "2025-09-06T08:29:16.300Z",
+      "context": "User wants to clean up code duplications and consolidate implementations",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:29:16.300Z",
+      "lastVerified": "2025-09-06T08:29:16.300Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147357268_1d8z4xz1a",
+      "content": "Starting Neon integration cleanup task. Need to:\n1. Remove src/integrations/neon/types.ts\n2. Update imports to use Supabase types instead\n3. Check if API queries file imports from Neon types\n4. Remove empty neon directory if no files remain\n5. Search and fix any remaining Neon imports",
+      "type": "troubleshooting",
+      "tags": [
+        "troubleshooting",
+        "api",
+        "neon-cleanup",
+        "supabase-migration",
+        "types-migration"
+      ],
+      "timestamp": "2025-09-06T08:29:17.268Z",
+      "context": "User requested cleanup of remaining Neon integration files after client/queries were already deleted",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:29:17.268Z",
+      "lastVerified": "2025-09-06T08:29:17.268Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147522043_khx4s3yqi",
+      "content": "Successfully completed Neon integration cleanup:\n1. ✅ Removed src/integrations/neon/types.ts file\n2. ✅ Updated src/integrations/api/queries.ts to import from '../supabase/types' instead of '../neon/types'\n3. ✅ Removed empty src/integrations/neon/ directory\n4. ✅ Verified no remaining Neon imports (grep showed no matches)\n5. ✅ Build successful - no broken imports\n6. ✅ Lint shows no new errors related to cleanup\n\nCurrent integrations structure: api/, supabase/ directories only\nSupabase types.ts contains all necessary interfaces: Meeting, Availability, MeetingInsert, AvailabilityInsert, MeetingUpdate",
+      "type": "code",
+      "tags": [
+        "code",
+        "api",
+        "neon-cleanup",
+        "supabase-migration",
+        "completed"
+      ],
+      "timestamp": "2025-09-06T08:32:02.043Z",
+      "context": "Completed Neon integration cleanup task - all files removed and imports updated",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:32:02.043Z",
+      "lastVerified": "2025-09-06T08:32:02.043Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147578143_qwv6g6p9a",
+      "content": "Successfully completed code cleanup and consolidation:\n1. Removed duplicate toast hook wrapper file (src/components/ui/use-toast.ts)\n2. Removed duplicate schema.sql file, kept supabase-schema.sql with RLS policies\n3. Cleaned up commented code blocks in CreateMeeting.tsx and AddAvailability.tsx\n4. Verified all toast imports still work correctly using @/hooks/use-toast\n5. Build and TypeScript compilation successful with no errors",
+      "type": "general",
+      "tags": [
+        "general",
+        "typescript",
+        "code-cleanup",
+        "completed",
+        "consolidation"
+      ],
+      "timestamp": "2025-09-06T08:32:58.143Z",
+      "context": "Code cleanup task completed successfully",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:32:58.143Z",
+      "lastVerified": "2025-09-06T08:32:58.143Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147623587_b33dfwsel",
+      "content": "Starting comprehensive build system verification for schedula project. Need to verify build, dev server, linting, and type checking all work correctly.",
+      "type": "general",
+      "tags": [
+        "general",
+        "build-verification",
+        "schedula",
+        "verification"
+      ],
+      "timestamp": "2025-09-06T08:33:43.587Z",
+      "context": "Build system verification task",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:33:43.587Z",
+      "lastVerified": "2025-09-06T08:33:43.587Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147649149_38uu6xwx9",
+      "content": "Build verification SUCCESS: npm run build completed successfully. Bundle sizes: index.html (1.46 kB), main CSS (35.00 kB), main JS (598.33 kB). Warning about chunk size > 500kB suggests code-splitting optimization opportunity but build works.",
+      "type": "warning",
+      "tags": [
+        "warning",
+        "optimization",
+        "build-success",
+        "bundle-sizes",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:34:09.149Z",
+      "context": "Build verification results",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:34:09.149Z",
+      "lastVerified": "2025-09-06T08:34:09.149Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147672375_6vnx3lz9m",
+      "content": "Dev server verification SUCCESS: npm run dev started successfully on localhost:3003 (ports 3001-3002 were busy). Vite ready in 226ms with no startup errors.",
+      "type": "general",
+      "tags": [
+        "general",
+        "dev-server-success",
+        "vite",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:34:32.375Z",
+      "context": "Dev server verification results",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:34:32.375Z",
+      "lastVerified": "2025-09-06T08:34:32.375Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147686054_fl1uk86sy",
+      "content": "Linting check found 5 issues: 1 error (require() in tailwind.config.ts) and 4 warnings (missing useEffect dependency, fast refresh warnings in UI components). The require() error in tailwind config needs to be fixed as it's blocking.",
+      "type": "config",
+      "tags": [
+        "config",
+        "linting-issues",
+        "eslint-error",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:34:46.054Z",
+      "context": "Linting verification results",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:34:46.054Z",
+      "lastVerified": "2025-09-06T08:34:46.054Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147718196_ogamjjob6",
+      "content": "LINTING FIX SUCCESS: Fixed the require() error in tailwind.config.ts by converting to ES module import. Now only 4 warnings remain (no errors): missing useEffect dependency in MeetingView.tsx and 3 fast refresh warnings in UI components.",
+      "type": "config",
+      "tags": [
+        "config",
+        "linting-fixed",
+        "tailwind-config",
+        "warnings-only",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:35:18.196Z",
+      "context": "Linting fix results",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:35:18.196Z",
+      "lastVerified": "2025-09-06T08:35:18.196Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147731004_v07yu4kib",
+      "content": "TYPE CHECKING SUCCESS: npx tsc --noEmit completed with no output, meaning no TypeScript compilation errors found. All types are valid.",
+      "type": "general",
+      "tags": [
+        "general",
+        "typescript",
+        "typescript-success",
+        "type-checking",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:35:31.004Z",
+      "context": "TypeScript verification results",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:35:31.004Z",
+      "lastVerified": "2025-09-06T08:35:31.004Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757147790315_fijj28o8s",
+      "content": "Playwright test SKIPPED: Browser binaries not installed (need npx playwright install). This is an environment setup issue, not a build system problem. All core build verification steps completed successfully.",
+      "type": "config",
+      "tags": [
+        "config",
+        "playwright-skipped",
+        "environment-issue",
+        "verification-complete",
+        "schedula"
+      ],
+      "timestamp": "2025-09-06T08:36:30.315Z",
+      "context": "Build verification completion",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T08:36:30.315Z",
+      "lastVerified": "2025-09-06T08:36:30.315Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757149319789_84lhemjwl",
+      "content": "PORT CONFIGURATION CONFLICTS IDENTIFIED:\n- vite.config.ts: Uses port 3001 for dev server\n- start-dev.sh: Uses port 3000 for Vercel dev\n- playwright.config.ts: Uses port 3002 for testing\n- package.json dev script: Just runs \"vite --host\" (would use 3001)\n\nTYPESCRIPT CONFIG STATUS:\n- tsconfig.json has strict settings disabled (noImplicitAny: false, etc.)\n- tsconfig.app.json also has strict settings disabled (strict: false)\n- Need to gradually enable stricter settings\n\nPLAN: Standardize on port 3000 for all configs to match production and start-dev.sh",
+      "type": "config",
+      "tags": [
+        "config",
+        "typescript",
+        "testing"
+      ],
+      "timestamp": "2025-09-06T09:01:59.789Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T09:01:59.789Z",
+      "lastVerified": "2025-09-06T09:01:59.789Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757149477307_y39luz6kh",
+      "content": "CONFIGURATION CHANGES COMPLETED AND TESTED:\n\n1. PORT STANDARDIZATION: ✅\n- vite.config.ts: Updated to port 3000\n- playwright.config.ts: Updated to port 3000 (both baseURL and webServer)\n- start-dev.sh: Already used port 3000, cleaned up port range\n\n2. TYPESCRIPT OPTIMIZATION: ✅\n- tsconfig.json: Enabled strict settings (noImplicitAny, noUnusedLocals, noUnusedParameters, strictNullChecks)\n- tsconfig.app.json: Enabled strict mode and all linting options\n- Build test: SUCCESS - No TypeScript errors\n- Lint test: SUCCESS - Only 4 minor warnings, no errors\n\n3. GITIGNORE ENHANCEMENTS: ✅\n- Added memories.json to ignore AI tools temporary files\n- All other patterns already well covered\n\n4. TESTING RESULTS: ✅\n- npm run build: SUCCESS\n- npm run lint: SUCCESS (4 warnings, 0 errors)\n- npm run dev: SUCCESS (auto-selected available port)\n\nAll changes are backward compatible and improve code quality without breaking functionality.",
+      "type": "config",
+      "tags": [
+        "config",
+        "typescript",
+        "optimization",
+        "testing"
+      ],
+      "timestamp": "2025-09-06T09:04:37.307Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-06T09:04:37.307Z",
+      "lastVerified": "2025-09-06T09:04:37.307Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757215116737_0g6uoppoi",
+      "content": "Issue identified: Meeting creation works in production/deployed but fails locally. The API endpoint at /api/meetings/index.ts is configured to use Supabase with schema 'schedula' but local environment likely missing proper config.",
+      "type": "config",
+      "tags": [
+        "config",
+        "api"
+      ],
+      "timestamp": "2025-09-07T03:18:36.737Z",
+      "context": "Debugging meeting creation failure - local vs production behavior",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-07T03:18:36.737Z",
+      "lastVerified": "2025-09-07T03:18:36.737Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1757215304978_2dbi33ukg",
+      "content": "SOLUTION CONFIRMED: Meeting creation works locally when running both npm run dev (port 3000) AND vercel dev on port 3001. The Vite proxy configuration correctly forwards API requests from port 3000 to port 3001. Meeting creation successful - created meeting ID 99af4bcc-682c-4931-b246-2a2a1ea09c40 and redirected to meeting view page.",
+      "type": "config",
+      "tags": [
+        "config",
+        "api",
+        "solution",
+        "local-dev",
+        "vercel"
+      ],
+      "timestamp": "2025-09-07T03:21:44.978Z",
+      "context": "Local development setup solution for API routes",
+      "accessCount": 0,
+      "lastAccessed": "2025-09-07T03:21:44.978Z",
+      "lastVerified": "2025-09-07T03:21:44.978Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-09-05T10:33:15.865Z"
+  "lastUpdated": "2025-09-07T03:21:44.978Z"
 }

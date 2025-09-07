@@ -13,13 +13,13 @@ test.describe('Responsive Design Tests', () => {
       await page.goto('/');
 
       // Main form should be visible and usable
-      await expect(page.locator('input[placeholder*="Meeting"]')).toBeVisible();
-      await expect(page.locator('input[placeholder*="name"]')).toBeVisible();
+      await expect(page.locator('input[placeholder*="Q4 Strategy Review"]')).toBeVisible();
+      await expect(page.locator('input[placeholder*="full name"]')).toBeVisible();
       await expect(page.locator('button:has-text("Create Meeting")')).toBeVisible();
 
       // Test form functionality
-      await page.fill('input[placeholder*="Meeting"]', `${viewport.name} Test Meeting`);
-      await page.fill('input[placeholder*="name"]', `${viewport.name} User`);
+      await page.fill('input[placeholder*="Q4 Strategy Review"]', `${viewport.name} Test Meeting`);
+      await page.fill('input[placeholder*="full name"]', `${viewport.name} User`);
       
       // Form should be submittable
       const createButton = page.locator('button:has-text("Create Meeting")');
@@ -31,8 +31,8 @@ test.describe('Responsive Design Tests', () => {
       
       // Create a meeting first
       await page.goto('/');
-      await page.fill('input[placeholder*="Meeting"]', `Responsive ${viewport.name} Meeting`);
-      await page.fill('input[placeholder*="name"]', 'Responsive Tester');
+      await page.fill('input[placeholder*="Q4 Strategy Review"]', `Responsive ${viewport.name} Meeting`);
+      await page.fill('input[placeholder*="full name"]', 'Responsive Tester');
       await page.click('button:has-text("Create Meeting")');
       
       await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });
@@ -97,8 +97,8 @@ test.describe('Responsive Design Tests', () => {
     }
 
     // Test form interactions work with touch
-    await page.fill('input[placeholder*="Meeting"]', 'Touch Test Meeting');
-    await page.fill('input[placeholder*="name"]', 'Touch User');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Touch Test Meeting');
+    await page.fill('input[placeholder*="full name"]', 'Touch User');
     
     // Tap the button (mobile-style interaction)
     await page.tap('button:has-text("Create Meeting")');
@@ -119,12 +119,12 @@ test.describe('Responsive Design Tests', () => {
     await page.setViewportSize({ width: 667, height: 375 });
 
     // Should still be functional
-    await expect(page.locator('input[placeholder*="Meeting"]')).toBeVisible();
+    await expect(page.locator('input[placeholder*="Q4 Strategy Review"]')).toBeVisible();
     await expect(page.locator('button:has-text("Create Meeting")')).toBeVisible();
 
     // Form should still work
-    await page.fill('input[placeholder*="Meeting"]', 'Landscape Test');
-    await page.fill('input[placeholder*="name"]', 'Landscape User');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Landscape Test');
+    await page.fill('input[placeholder*="full name"]', 'Landscape User');
     
     const createButton = page.locator('button:has-text("Create Meeting")');
     await expect(createButton).toBeEnabled();

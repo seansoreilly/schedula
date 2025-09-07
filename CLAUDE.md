@@ -4,57 +4,96 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-- **Dev server**: `npm run dev` or `bun run dev` (starts on localhost:3000)
+### Local Development (Critical Setup)
+- **Full dev setup**: `npm run dev:full` or `./start-dev.sh` (recommended - runs Vercel dev server with environment validation)
+- **Alternative setup**: Run both `npm run dev` (frontend) AND `vercel dev --listen 3001` (API) in separate terminals
+- **Frontend only**: `npm run dev` (Vite dev server on port 3000)
+- **API server**: `vercel dev --listen 3001` (serverless functions on port 3001)
+
+### Build & Quality
 - **Build**: `npm run build` or `bun run build` 
+- **Build dev**: `npm run build:dev` (development mode build)
 - **Lint**: `npm run lint`
-- **Test**: `npx playwright test` (E2E tests with Playwright)
-- **Test UI**: `npx playwright test --ui`
 - **Preview**: `npm run preview` (preview production build)
+
+### Testing
+- **E2E tests**: `npm run test` or `npx playwright test`
+- **Test UI**: `npm run test:ui` or `npx playwright test --ui`
+- **Test headed**: `npm run test:headed` (visible browser)
+- **Test debug**: `npm run test:debug` (debug mode)
 
 ## Architecture Overview
 
-This is a meeting scheduling application built with React, TypeScript, and Vite, with a Vercel serverless backend.
+Schedula is a meeting scheduling application with a React frontend and Vercel serverless backend.
 
-### Key Architecture Decisions
+### Critical Local Development Setup
 
-**Frontend**: React SPA using Vite for build tooling, shadcn/ui components, TanStack Query for server state management, and React Router for routing.
+**The `/api/*` routes are Vercel serverless functions that require special handling in local development:**
 
-**Backend**: Vercel serverless functions in `/api/` directory using PostgreSQL (Neon/Supabase) for persistence. API endpoints handle meeting creation and availability management.
+1. **Option 1 (Recommended)**: Use `npm run dev:full` which runs the setup script that validates environment and starts Vercel dev server
+2. **Option 2**: Manually run both servers:
+   - `npm run dev` (frontend on port 3000) 
+   - `vercel dev --listen 3001` (API on port 3001)
+   - Vite proxy configuration forwards `/api/*` requests from 3000 → 3001
 
-**Database**: Uses both Neon (src/integrations/neon/) and Supabase configurations. Database schema includes `meetings` and `availability` tables with proper foreign key relationships.
+### Technology Stack
 
-**Styling**: Tailwind CSS with shadcn/ui component system. All UI components are in `src/components/ui/`.
+**Frontend**: React 18 + TypeScript + Vite build system + shadcn/ui components + TanStack Query for server state + React Router for routing
 
-### Core Components
+**Backend**: Vercel serverless functions (`/api/` directory) with Supabase PostgreSQL database and Redis caching
 
-- `CreateMeeting.tsx` - Meeting creation form
-- `MeetingView.tsx` - Display meeting details and availability
-- `AddAvailability.tsx` - Participant availability input
-- `AvailabilityDisplay.tsx` - Consolidated availability visualization
-- `ShareMeeting.tsx` - Meeting sharing functionality
+**API Architecture**:
+- `/api/meetings/` - POST to create meetings, GET to list
+- `/api/meetings/[id]` - GET/PUT/DELETE specific meeting  
+- `/api/availability/` - POST to create availability, GET with meeting_id query
 
-### Data Flow
+### Database Architecture
 
-1. Meetings are created via `/api/meetings/` endpoint
-2. Availability is stored via `/api/availability/` endpoint
-3. Frontend uses TanStack Query for API state management
-4. Database operations use PostgreSQL with both Neon and Supabase clients
+**Current Setup**: Transitioning from Neon to Supabase as primary database
+- Database client in `src/integrations/supabase/` 
+- API layer in `src/integrations/api/` abstracts database calls
+- Schema: `meetings` table with `availability` table (foreign key relationship)
+- Supabase schema: `schedula` (configured in API endpoints)
 
-### Environment Setup
+**Environment Variables**:
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key  
+- `REDIS_URL` - Redis connection string (optional)
 
-Required environment variables:
-- `DATABASE_URL` - PostgreSQL connection string
-- `VITE_SUPABASE_URL` - Supabase project URL  
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+### Key Component Architecture
 
-### Testing
+**Meeting Creation Flow**:
+1. `CreateMeeting.tsx` → `src/integrations/api/queries.ts` → `/api/meetings/` → Supabase
+2. Success redirects to `/meeting/[id]` via React Router
 
-E2E tests using Playwright in `/e2e/` directory. Tests cover meeting creation, availability management, and responsive design. Test server automatically starts on localhost:3000.
+**Availability Management**:
+1. `AddAvailability.tsx` collects time slots
+2. `AvailabilityDisplay.tsx` shows consolidated view with overlap detection
+3. Data flows through TanStack Query for caching and optimistic updates
 
-## Important Notes
+**Core Components**:
+- `CreateMeeting.tsx` - Hero landing page with meeting creation form
+- `MeetingView.tsx` - Meeting details and participant management
+- `AddAvailability.tsx` - Time slot selection interface
+- `AvailabilityDisplay.tsx` - Visual availability overlap display
+- `ShareMeeting.tsx` - Meeting link sharing functionality
 
-- Deployment target is Vercel with serverless functions
-- Uses both Neon and Supabase database clients (dual setup)
-- No authentication required - meetings are publicly accessible via UUID
-- Local storage used for remembering participant names
-- Responsive design with mobile-first approach using Tailwind breakpoints
+### Testing Architecture
+
+Playwright E2E tests in `/e2e/` directory covering:
+- Meeting creation flow (`meeting-creation.spec.ts`)
+- Availability management (`availability-management.spec.ts`)
+- Sharing functionality (`meeting-sharing.spec.ts`)
+- Responsive design (`responsive-design.spec.ts`)
+- API integration (`api-integration.spec.ts`)
+
+Tests automatically start development server on localhost:3000.
+
+## Important Development Notes
+
+- **No authentication required** - meetings are public via UUID
+- **Local storage** remembers participant names across sessions  
+- **Mobile-first responsive design** using Tailwind breakpoints
+- **UUID-based meeting IDs** for security and uniqueness
+- **Real-time availability visualization** with overlap detection
+- **Vercel deployment optimized** with edge functions and caching

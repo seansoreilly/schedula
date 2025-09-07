@@ -6,8 +6,8 @@ test.describe('Meeting Sharing', () => {
   test.beforeEach(async ({ page }) => {
     // Create a meeting first
     await page.goto('/');
-    await page.fill('input[placeholder*="Meeting"]', 'Shareable Meeting');
-    await page.fill('input[placeholder*="name"]', 'Share Test Organizer');
+    await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Shareable Meeting');
+    await page.fill('input[placeholder*="full name"]', 'Share Test Organizer');
     await page.click('button:has-text("Create Meeting")');
     
     await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });

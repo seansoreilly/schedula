@@ -13,7 +13,6 @@ import {
   Building2,
   CheckCircle,
   Zap,
-  Shield,
   Globe,
   LogIn,
 } from "lucide-react";
@@ -155,15 +154,6 @@ const CreateMeeting = () => {
         {/* Right Column - Meeting Creation Form */}
         <div className="space-y-6">
           <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-            {/* <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-              <CardTitle className="text-xl text-center font-semibold flex items-center justify-center gap-3">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <Calendar className="h-6 w-6" />
-                </div>
-                Create meeting
-              </CardTitle>
-            </CardHeader> */}
-
             <CardContent className="p-8">
               <form onSubmit={handleCreateMeeting} className="space-y-6">
                 <div className="space-y-3">
