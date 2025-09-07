@@ -10,8 +10,14 @@ export default defineConfig(({ mode }) => ({
   publicDir: 'public',
   server: {
     host: "::",
-    port: 3001,
+    port: 3000,
     historyApiFallback: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),
