@@ -32,8 +32,10 @@ ALTER TABLE schedula.meetings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE schedula.availability ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow public access (since no auth is required)
+-- Must target anon/authenticated explicitly: the API connects with the anon key,
+-- and a policy without TO applies only to the role that happens to run it.
 CREATE POLICY "Allow all operations on meetings" ON schedula.meetings
-  FOR ALL USING (true);
+  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow all operations on availability" ON schedula.availability
-  FOR ALL USING (true);
+  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
