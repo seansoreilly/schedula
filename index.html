@@ -14,13 +14,18 @@
     <meta property="og:description" content="Easiest meeting scheduler" />
     <meta property="og:type" content="website" />
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z7WBMVTNYJ"></script>
+    <!-- Google Analytics (skipped on localhost so dev servers and Playwright runs don't count as traffic) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-Z7WBMVTNYJ');
+      if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+        var gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-Z7WBMVTNYJ';
+        document.head.appendChild(gaScript);
+        gtag('js', new Date());
+        gtag('config', 'G-Z7WBMVTNYJ');
+      }
     </script>
 
   </head>
