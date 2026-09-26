@@ -28,9 +28,10 @@ const App = () => (
                     <Building2 className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    {/* Site wordmark, not a page heading — each page supplies its own <h1> */}
+                    <p className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
                       Schedula
-                    </h1>
+                    </p>
                     <p className="text-xs text-slate-500 font-medium -mt-1">
                       Easy scheduling
                     </p>
