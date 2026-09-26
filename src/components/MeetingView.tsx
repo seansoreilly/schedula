@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
@@ -192,9 +192,9 @@ const MeetingView = () => {
               ) : (
                 <div className="group">
                   <div className="flex items-center gap-3">
-                    <CardTitle className="text-3xl lg:text-4xl font-bold">
+                    <h1 className="text-3xl lg:text-4xl font-bold">
                       {meeting.title}
-                    </CardTitle>
+                    </h1>
                     <Button
                       onClick={() => setIsEditingTitle(true)}
                       size="sm"
