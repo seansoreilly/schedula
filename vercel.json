@@ -1,8 +1,19 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/meeting/:meetingId",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/meeting/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ]
 }
