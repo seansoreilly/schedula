@@ -1,59 +1,71 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Schedula Development Server Startup Script
-# This script ensures both frontend and API work together properly
+set -euo pipefail
 
-echo "🚀 Starting Schedula Development Environment..."
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$project_root"
 
-# Load environment variables
-if [ -f .env ]; then
-    echo "📋 Loading environment variables..."
-    export $(cat .env | grep -v '^#' | xargs)
-    echo "✅ Environment variables loaded"
-else
-    echo "⚠️  Warning: .env file not found"
-fi
+load_env_file() {
+  local env_file="$1"
+  local line line_number=0 key raw_value value
 
-# Kill any existing processes on development port
-echo "🧹 Cleaning up existing processes..."
-lsof -ti:3000 | xargs kill -9 2>/dev/null || echo "No existing processes found"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line_number=$((line_number + 1))
+    line="${line%$'\r'}"
 
-# Verify environment variables
-echo "🔍 Verifying configuration..."
-if [ -z "$VITE_SUPABASE_URL" ]; then
-    echo "❌ Error: VITE_SUPABASE_URL not set"
+    [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^[[:space:]]*# ]] && continue
+
+    if [[ ! "$line" =~ ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=(.*)$ ]]; then
+      printf 'Invalid .env entry at line %s. Expected KEY=value.\n' "$line_number" >&2
+      return 1
+    fi
+
+    key="${BASH_REMATCH[2]}"
+    raw_value="${BASH_REMATCH[3]}"
+    value="${raw_value#"${raw_value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ ${#value} -ge 2 ]] && {
+      [[ "${value:0:1}" == '"' && "${value: -1}" == '"' ]] ||
+      [[ "${value:0:1}" == "'" && "${value: -1}" == "'" ]];
+    }; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == *" #"* ]]; then
+      value="${value%% #*}"
+    fi
+
+    printf -v "$key" '%s' "$value"
+    export "$key"
+  done < "$env_file"
+}
+
+require_environment_variable() {
+  local variable_name="$1"
+  if [[ -z "${!variable_name:-}" ]]; then
+    printf 'Missing required environment variable: %s\n' "$variable_name" >&2
     exit 1
+  fi
+}
+
+if [[ -f .env ]]; then
+  printf 'Loading environment variables from .env\n'
+  load_env_file .env
 fi
 
-if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-    echo "❌ Error: VITE_SUPABASE_ANON_KEY not set"
-    exit 1
+# Preserve compatibility with existing Vercel projects while keeping new local
+# configuration server-only.
+SUPABASE_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
+SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-${VITE_SUPABASE_ANON_KEY:-}}"
+export SUPABASE_URL SUPABASE_ANON_KEY
+
+require_environment_variable SUPABASE_URL
+require_environment_variable SUPABASE_ANON_KEY
+
+vercel_binary="$project_root/node_modules/.bin/vercel"
+if [[ ! -x "$vercel_binary" ]]; then
+  printf 'Vercel CLI is not installed. Run npm install first.\n' >&2
+  exit 1
 fi
 
-echo "✅ Supabase URL: $VITE_SUPABASE_URL"
-echo "✅ Supabase Key: [REDACTED]"
-
-# Test API connectivity
-echo "🔌 Testing Supabase connectivity..."
-curl -s -o /dev/null -w "%{http_code}" "$VITE_SUPABASE_URL/rest/v1/" -H "apikey: $VITE_SUPABASE_ANON_KEY" > /tmp/supabase_test
-SUPABASE_STATUS=$(cat /tmp/supabase_test)
-
-if [ "$SUPABASE_STATUS" = "200" ]; then
-    echo "✅ Supabase connection successful"
-else
-    echo "⚠️  Warning: Supabase connection returned status $SUPABASE_STATUS"
-fi
-
-# Start Vercel development server
-echo "🌟 Starting Vercel development server..."
-echo "📍 Frontend: http://localhost:3000"
-echo "🔌 API: http://localhost:3000/api/"
-echo ""
-echo "🎯 Ready to create meetings!"
-echo "   1. Open http://localhost:3000 in your browser"
-echo "   2. Fill in meeting title and your name"
-echo "   3. Click 'Create Meeting'"
-echo ""
-
-# Start the server with proper environment variables
-exec vercel dev --listen 3000
+printf 'Starting Schedula at http://localhost:3000\n'
+exec "$vercel_binary" dev --listen 3000

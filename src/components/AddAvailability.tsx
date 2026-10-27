@@ -1,33 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import {
+  createTimeOptions,
+  getAvailabilityDefaults,
+  toLocalDateInputValue,
+} from "@/lib/availability";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
-// Utility function to get the next 30-minute segment
-const getNextThirtyMinuteSegment = () => {
-  const now = new Date();
-  const minutes = now.getMinutes();
-  const hours = now.getHours();
-  
-  // Round up to the next 30-minute mark
-  let nextMinutes: number;
-  let nextHours = hours;
-  
-  if (minutes === 0) {
-    nextMinutes = 30;
-  } else if (minutes <= 30) {
-    nextMinutes = 30;
-  } else {
-    nextMinutes = 0;
-    nextHours = (hours + 1) % 24;
-  }
-  
-  return `${nextHours.toString().padStart(2, "0")}:${nextMinutes.toString().padStart(2, "0")}`;
-};
+const timeOptions = createTimeOptions();
 
 interface AddAvailabilityProps {
   meetingId: string;
@@ -38,12 +23,11 @@ const AddAvailability = ({
   meetingId,
   onAvailabilityAdded,
 }: AddAvailabilityProps) => {
+  const [initialDefaults] = useState(getAvailabilityDefaults);
   const [participantName, setParticipantName] = useState("");
-  const [availableDate, setAvailableDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [startTime, setStartTime] = useState(getNextThirtyMinuteSegment());
-  const [endTime, setEndTime] = useState("");
+  const [availableDate, setAvailableDate] = useState(initialDefaults.availableDate);
+  const [startTime, setStartTime] = useState(initialDefaults.startTime);
+  const [endTime, setEndTime] = useState(initialDefaults.endTime);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -77,19 +61,6 @@ const AddAvailability = ({
       setEndTime(`${endHours}:${endMinutes}`);
     }
   }, [startTime]);
-
-  const generateTimeOptions = () => {
-    const times = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, "0")}:${minute
-          .toString()
-          .padStart(2, "0")}`;
-        times.push(timeString);
-      }
-    }
-    return times;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,10 +99,11 @@ const AddAvailability = ({
         description: "Your availability has been recorded for this meeting.",
       });
 
-      // Reset form but keep name
-      setAvailableDate(new Date().toISOString().split("T")[0]);
-      setStartTime("");
-      setEndTime("");
+      // Reset the range but preserve the participant name.
+      const defaults = getAvailabilityDefaults();
+      setAvailableDate(defaults.availableDate);
+      setStartTime(defaults.startTime);
+      setEndTime(defaults.endTime);
 
       onAvailabilityAdded();
     } catch (error) {
@@ -145,8 +117,6 @@ const AddAvailability = ({
       setIsLoading(false);
     }
   };
-
-  const timeOptions = generateTimeOptions();
 
   return (
     <Card className="shadow-sm border border-slate-200 bg-white">
@@ -185,7 +155,7 @@ const AddAvailability = ({
                 value={availableDate}
                 onChange={(e) => setAvailableDate(e.target.value)}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                min={new Date().toISOString().split("T")[0]}
+                min={toLocalDateInputValue(new Date())}
               />
             </div>
 

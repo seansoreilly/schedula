@@ -1,7 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import CreateMeeting from "./components/CreateMeeting";
 import MeetingView from "./components/MeetingView";
@@ -9,15 +7,11 @@ import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
 import { Building2, Calendar, Users, Clock } from "lucide-react";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Analytics />
-      <BrowserRouter>
+  <TooltipProvider>
+    <Toaster />
+    <Analytics />
+    <BrowserRouter>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
           {/* Professional Header */}
           <header className="bg-white shadow-sm border-b border-slate-200">
@@ -28,10 +22,9 @@ const App = () => (
                     <Building2 className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    {/* Site wordmark, not a page heading — each page supplies its own <h1> */}
-                    <p className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
                       Schedula
-                    </p>
+                    </h1>
                     <p className="text-xs text-slate-500 font-medium -mt-1">
                       Easy scheduling
                     </p>
@@ -106,9 +99,8 @@ const App = () => (
             </div>
           </footer>
         </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </BrowserRouter>
+  </TooltipProvider>
 );
 
 export default App;
