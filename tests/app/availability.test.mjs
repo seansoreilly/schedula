@@ -5,7 +5,7 @@ import {
   createTimeOptions,
   findCommonAvailabilitySlots,
   getAvailabilityDefaults,
-} from "../src/lib/availability.ts";
+} from "../../src/lib/availability.ts";
 
 function availability(overrides) {
   return {

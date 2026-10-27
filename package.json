@@ -14,7 +14,7 @@
     "build:dev": "npm run typecheck && vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:unit": "node --test tests/*.test.mjs",
+    "test:unit": "node --import ./tests/support/resolve-ts.mjs --test \"tests/**/*.test.mjs\"",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
