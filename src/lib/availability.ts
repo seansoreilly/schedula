@@ -1,4 +1,9 @@
 import type { Availability } from "@/integrations/api/types";
+import {
+  END_OF_DAY,
+  formatTimeOfDay,
+  parseTimeOfDay,
+} from "../../shared/time-of-day";
 
 export interface AvailabilityDefaults {
   availableDate: string;
@@ -13,12 +18,36 @@ export interface CommonAvailabilitySlot {
   participants: string[];
 }
 
+export interface AvailabilityDay {
+  date: string;
+  entries: Availability[];
+}
+
+const SLOT_MINUTES = 30;
+const SLOTS_PER_DAY = (24 * 60) / SLOT_MINUTES;
+const END_OF_DAY_MINUTES = parseTimeOfDay(END_OF_DAY) ?? 0;
+
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
 }
 
 export function toLocalDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Start + 30 minutes, capped at 23:59 because ranges never cross midnight. "" if `start` is not a time. */
+export function defaultEndTime(start: string): string {
+  const startMinutes = parseTimeOfDay(start);
+  if (startMinutes === null) {
+    return "";
+  }
+
+  const endMinutes = startMinutes + SLOT_MINUTES;
+  return endMinutes >= END_OF_DAY_MINUTES ? END_OF_DAY : formatTimeOfDay(endMinutes);
+}
+
+export function todayDateInputValue(now: Date = new Date()): string {
+  return toLocalDateInputValue(now);
 }
 
 export function getAvailabilityDefaults(now: Date = new Date()): AvailabilityDefaults {
@@ -35,37 +64,70 @@ export function getAvailabilityDefaults(now: Date = new Date()): AvailabilityDef
     start.setMinutes(start.getMinutes() + 30);
   }
 
-  const end = new Date(start);
-  end.setMinutes(end.getMinutes() + 30);
+  const startTime = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
 
   return {
     availableDate: toLocalDateInputValue(start),
-    startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
-    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
+    startTime,
+    endTime: defaultEndTime(startTime),
   };
 }
 
-export function createTimeOptions(): string[] {
-  const times: string[] = [];
+/** 00:00, 00:30 … 23:30 */
+export function createStartTimeOptions(): string[] {
+  return Array.from({ length: SLOTS_PER_DAY }, (_, slot) => formatTimeOfDay(slot * SLOT_MINUTES));
+}
 
-  for (let hour = 0; hour < 24; hour += 1) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      times.push(`${pad(hour)}:${pad(minute)}`);
+/** 00:30, 01:00 … 23:30, 23:59 */
+export function createEndTimeOptions(): string[] {
+  return [...createStartTimeOptions().slice(1), END_OF_DAY];
+}
+
+/** "13:30" → "1:30 PM" */
+export function formatTimeLabel(time: string): string {
+  const totalMinutes = parseTimeOfDay(time);
+  if (totalMinutes === null) {
+    return time;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${pad(totalMinutes % 60)} ${hours >= 12 ? "PM" : "AM"}`;
+}
+
+/** "2026-01-02" → "Friday, January 2, 2026" */
+export function formatDateLabel(date: string): string {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/** Orders rows by date, then start time. */
+export function compareAvailability(left: Availability, right: Availability): number {
+  return left.available_date.localeCompare(right.available_date)
+    || left.start_time.localeCompare(right.start_time);
+}
+
+/** Dates ascending; each day's rows by start time. Does not mutate the input. */
+export function groupAvailabilityByDate(availability: Availability[]): AvailabilityDay[] {
+  const days = new Map<string, Availability[]>();
+  for (const entry of [...availability].sort(compareAvailability)) {
+    const entries = days.get(entry.available_date);
+    if (entries) {
+      entries.push(entry);
+    } else {
+      days.set(entry.available_date, [entry]);
     }
   }
 
-  return times;
+  return [...days].map(([date, entries]) => ({ date, entries }));
 }
 
-function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function minutesToTime(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${pad(hours)}:${pad(minutes)}`;
+function minutesOf(time: string): number {
+  return parseTimeOfDay(time) ?? 0;
 }
 
 function haveSameParticipants(left: string[], right: string[]): boolean {
@@ -80,24 +142,17 @@ export function findCommonAvailabilitySlots(
     return [];
   }
 
-  const availabilityByDate = availability.reduce<Record<string, Availability[]>>(
-    (grouped, entry) => {
-      (grouped[entry.available_date] ??= []).push(entry);
-      return grouped;
-    },
-    {}
-  );
   const commonSlots: CommonAvailabilitySlot[] = [];
 
-  for (const [date, dailyAvailability] of Object.entries(availabilityByDate)) {
+  for (const { date, entries: dailyAvailability } of groupAvailabilityByDate(availability)) {
     if (new Set(dailyAvailability.map((entry) => entry.participant_name)).size < 2) {
       continue;
     }
 
     const timePoints = new Set<number>();
     for (const entry of dailyAvailability) {
-      timePoints.add(timeToMinutes(entry.start_time));
-      timePoints.add(timeToMinutes(entry.end_time));
+      timePoints.add(minutesOf(entry.start_time));
+      timePoints.add(minutesOf(entry.end_time));
     }
 
     const sortedTimePoints = [...timePoints].sort((left, right) => left - right);
@@ -110,8 +165,8 @@ export function findCommonAvailabilitySlots(
 
       for (const entry of dailyAvailability) {
         if (
-          timeToMinutes(entry.start_time) <= intervalStart
-          && timeToMinutes(entry.end_time) >= intervalEnd
+          minutesOf(entry.start_time) <= intervalStart
+          && minutesOf(entry.end_time) >= intervalEnd
         ) {
           participants.add(entry.participant_name);
         }
@@ -120,8 +175,8 @@ export function findCommonAvailabilitySlots(
       if (participants.size >= 2) {
         elementarySlots.push({
           date,
-          startTime: minutesToTime(intervalStart),
-          endTime: minutesToTime(intervalEnd),
+          startTime: formatTimeOfDay(intervalStart),
+          endTime: formatTimeOfDay(intervalEnd),
           participants: [...participants].sort(),
         });
       }
@@ -147,10 +202,5 @@ export function findCommonAvailabilitySlots(
     commonSlots.push(currentSlot);
   }
 
-  return commonSlots.sort((left, right) => {
-    const dateComparison = left.date.localeCompare(right.date);
-    return dateComparison !== 0
-      ? dateComparison
-      : timeToMinutes(left.startTime) - timeToMinutes(right.startTime);
-  });
+  return commonSlots;
 }

@@ -4,31 +4,18 @@ import { Calendar, Clock, Users } from "lucide-react";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Availability } from "@/integrations/api/types";
-import { findCommonAvailabilitySlots } from "@/lib/availability";
+import {
+  findCommonAvailabilitySlots,
+  formatDateLabel,
+  formatTimeLabel,
+  groupAvailabilityByDate,
+} from "@/lib/availability";
 
 interface AvailabilityDisplayProps {
   availability: Availability[];
 }
 
 const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString: string): string => {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
   // Professional avatar color system
   const getAvatarColor = (participantName: string): string => {
     const colors = [
@@ -65,22 +52,11 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
       .join("");
   };
 
-  // Group availability by date
-  const groupedAvailability = availability.reduce((acc, item) => {
-    const date = item.available_date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(item);
-    return acc;
-  }, {} as Record<string, Availability[]>);
-
+  const days = useMemo(() => groupAvailabilityByDate(availability), [availability]);
   const processedCommonSlots = useMemo(
     () => findCommonAvailabilitySlots(availability),
     [availability]
   );
-
-  const sortedDates = Object.keys(groupedAvailability).sort();
 
   if (availability.length === 0) {
     return (
@@ -118,19 +94,17 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-6">
-          {sortedDates.map((date) => (
+          {days.map(({ date, entries }) => (
             <div
               key={date}
               className="border-l-4 border-blue-500 pl-4 bg-slate-50/50 p-4 rounded-lg shadow-sm"
             >
               <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                 <Calendar className="h-4 w-4" />
-                {formatDate(date)}
+                {formatDateLabel(date)}
               </h3>
               <div className="space-y-2">
-                {groupedAvailability[date]
-                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                  .map((item) => (
+                {entries.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition-shadow"
@@ -152,8 +126,8 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                       </Badge>
                       <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
                         <Clock className="h-3 w-3" />
-                        {formatTime(item.start_time)} -{" "}
-                        {formatTime(item.end_time)}
+                        {formatTimeLabel(item.start_time)} -{" "}
+                        {formatTimeLabel(item.end_time)}
                       </div>
                     </div>
                   ))}
@@ -176,7 +150,7 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                 >
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                     <Calendar className="h-4 w-4" />
-                    {formatDate(commonSlot.date)}
+                    {formatDateLabel(commonSlot.date)}
                   </h3>
                   <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-emerald-200">
                     <div className="flex -space-x-2">
@@ -208,8 +182,8 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                     </div>
                     <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
                       <Clock className="h-3 w-3" />
-                      {formatTime(commonSlot.startTime)} -{" "}
-                      {formatTime(commonSlot.endTime)}
+                      {formatTimeLabel(commonSlot.startTime)} -{" "}
+                      {formatTimeLabel(commonSlot.endTime)}
                     </div>
                   </div>
                 </div>

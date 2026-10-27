@@ -1,10 +1,10 @@
-import { ApiError, apiClient } from "./client";
+import { ApiError, request } from "./client";
 import type {
   Availability,
-  AvailabilityInsert,
+  AvailabilityDraft,
   Meeting,
-  MeetingInsert,
-  MeetingUpdate,
+  MeetingDraft,
+  MeetingPatch,
 } from "./types";
 import {
   parseAvailability,
@@ -12,52 +12,46 @@ import {
   parseMeeting,
 } from "./types";
 
+function sendJson(method: "POST" | "PUT", data: unknown): RequestInit {
+  return { method, body: JSON.stringify(data) };
+}
+
+async function nullOnNotFound<T>(call: () => Promise<T>): Promise<T | null> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 export const meetingQueries = {
-  async create(data: MeetingInsert): Promise<Meeting> {
-    return parseMeeting(await apiClient.post<unknown>("/meetings", data));
+  async create(data: MeetingDraft): Promise<Meeting> {
+    return parseMeeting(await request("/meetings", sendJson("POST", data)));
   },
 
   async findById(id: string): Promise<Meeting | null> {
-    try {
-      return parseMeeting(
-        await apiClient.get<unknown>(`/meetings/${encodeURIComponent(id)}`)
-      );
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        return null;
-      }
-      throw error;
-    }
+    return nullOnNotFound(async () =>
+      parseMeeting(await request(`/meetings/${encodeURIComponent(id)}`))
+    );
   },
 
-  async update(id: string, data: MeetingUpdate): Promise<Meeting | null> {
-    try {
-      return parseMeeting(
-        await apiClient.put<unknown>(
-          `/meetings/${encodeURIComponent(id)}`,
-          data
-        )
-      );
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        return null;
-      }
-      throw error;
-    }
+  async update(id: string, data: MeetingPatch): Promise<Meeting | null> {
+    return nullOnNotFound(async () =>
+      parseMeeting(await request(`/meetings/${encodeURIComponent(id)}`, sendJson("PUT", data)))
+    );
   },
 };
 
 export const availabilityQueries = {
-  async create(data: AvailabilityInsert): Promise<Availability> {
-    return parseAvailability(
-      await apiClient.post<unknown>("/availability", data)
-    );
+  async create(data: AvailabilityDraft): Promise<Availability> {
+    return parseAvailability(await request("/availability", sendJson("POST", data)));
   },
 
   async findByMeetingId(meetingId: string): Promise<Availability[]> {
     const searchParams = new URLSearchParams({ meeting_id: meetingId });
-    return parseAvailabilityList(
-      await apiClient.get<unknown>(`/availability?${searchParams.toString()}`)
-    );
+    return parseAvailabilityList(await request(`/availability?${searchParams.toString()}`));
   },
 };

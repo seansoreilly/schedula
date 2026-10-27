@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import { useMeetingPage } from "@/hooks/use-meeting-page";
 import AddAvailability from "./AddAvailability";
 import AvailabilityDisplay from "./AvailabilityDisplay";
 import ShareMeeting from "./ShareMeeting";
@@ -17,16 +17,11 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Availability, Meeting } from "@/integrations/api/types";
-
-type LoadState = "loading" | "ready" | "not-found" | "error";
 
 const MeetingView = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
-  const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [availability, setAvailability] = useState<Availability[]>([]);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [reloadCount, setReloadCount] = useState(0);
+  const { status, meeting, availability, reload, rename, addAvailability } =
+    useMeetingPage(meetingId);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
@@ -36,87 +31,36 @@ const MeetingView = () => {
   ).size;
 
   useEffect(() => {
-    let isCurrentRequest = true;
-
-    async function loadMeetingData(): Promise<void> {
-      setLoadState("loading");
-      setMeeting(null);
-      setAvailability([]);
-      setIsEditingTitle(false);
-
-      if (!meetingId) {
-        setLoadState("not-found");
-        return;
-      }
-
-      try {
-        const meetingData = await meetingQueries.findById(meetingId);
-
-        if (!isCurrentRequest) {
-          return;
-        }
-
-        if (!meetingData) {
-          setLoadState("not-found");
-          return;
-        }
-
-        const availabilityData = await availabilityQueries.findByMeetingId(meetingId);
-
-        if (!isCurrentRequest) {
-          return;
-        }
-
-        setMeeting(meetingData);
-        setEditedTitle(meetingData.title);
-        setAvailability(availabilityData);
-        setLoadState("ready");
-      } catch (error) {
-        if (!isCurrentRequest) {
-          return;
-        }
-
-        console.error("Error fetching meeting data:", error);
-        setLoadState("error");
-        toast({
-          title: "Unable to Load Meeting",
-          description: "Please check your connection and try again.",
-          variant: "destructive",
-        });
-      }
+    if (status === "error") {
+      toast({
+        title: "Unable to Load Meeting",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
     }
+    if (status !== "ready") {
+      setIsEditingTitle(false);
+    }
+  }, [status, toast]);
 
-    void loadMeetingData();
-
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [meetingId, reloadCount, toast]);
+  const handleStartEdit = () => {
+    setEditedTitle(meeting?.title ?? "");
+    setIsEditingTitle(true);
+  };
 
   const handleTitleUpdate = async () => {
     if (!meeting || !editedTitle.trim() || isSavingTitle) return;
 
     setIsSavingTitle(true);
     try {
-      const updatedMeeting = await meetingQueries.update(meeting.id, {
-        title: editedTitle.trim(),
-      });
-
-      if (!updatedMeeting) {
-        setMeeting(null);
-        setAvailability([]);
-        setIsEditingTitle(false);
-        setLoadState("not-found");
-        return;
-      }
-
-      setMeeting(updatedMeeting);
-      setEditedTitle(updatedMeeting.title);
+      const wasRenamed = await rename(editedTitle.trim());
       setIsEditingTitle(false);
-      toast({
-        title: "Meeting Title Updated",
-        description: "The meeting title has been successfully updated.",
-      });
+      if (wasRenamed) {
+        toast({
+          title: "Meeting Title Updated",
+          description: "The meeting title has been successfully updated.",
+        });
+      }
     } catch (error) {
       console.error("Error updating title:", error);
       toast({
@@ -134,11 +78,7 @@ const MeetingView = () => {
     setIsEditingTitle(false);
   };
 
-  const reloadMeeting = (): void => {
-    setReloadCount((count) => count + 1);
-  };
-
-  if (loadState === "loading") {
+  if (status === "loading") {
     return (
       <div className="max-w-6xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -156,7 +96,7 @@ const MeetingView = () => {
     );
   }
 
-  if (loadState === "not-found") {
+  if (status === "not-found") {
     return (
       <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -177,7 +117,7 @@ const MeetingView = () => {
     );
   }
 
-  if (loadState === "error") {
+  if (status === "error") {
     return (
       <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -191,7 +131,7 @@ const MeetingView = () => {
             <p className="text-slate-600 text-lg leading-relaxed max-w-md mx-auto mb-6">
               We couldn&apos;t load this meeting right now. Check your connection and try again.
             </p>
-            <Button onClick={reloadMeeting}>Try Again</Button>
+            <Button onClick={reload}>Try Again</Button>
           </CardContent>
         </Card>
       </div>
@@ -256,7 +196,7 @@ const MeetingView = () => {
                       {meeting.title}
                     </CardTitle>
                     <Button
-                      onClick={() => setIsEditingTitle(true)}
+                      onClick={handleStartEdit}
                       size="sm"
                       variant="ghost"
                       className="text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity p-2"
@@ -301,7 +241,7 @@ const MeetingView = () => {
       {/* Add Availability */}
       <AddAvailability
         meetingId={meeting.id}
-        onAvailabilityAdded={reloadMeeting}
+        onSubmit={addAvailability}
       />
 
       {/* Display Availability */}
