@@ -34,10 +34,7 @@ test.describe('Meeting Sharing', () => {
     await expect(page.locator('text=Copied, text=Link copied')).toBeVisible();
   });
 
-  test('should allow direct URL access to meeting', async ({ page, browser }) => {
-    // Extract meeting ID from URL
-    const meetingId = meetingUrl.split('/meeting/')[1];
-
+  test('should allow direct URL access to meeting', async ({ browser }) => {
     // Open a new browser context (simulating different user)
     const newContext = await browser.newContext();
     const newPage = await newContext.newPage();

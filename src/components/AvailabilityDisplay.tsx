@@ -1,76 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-interface Availability {
-  id: string;
-  participant_name: string;
-  available_date: string;
-  start_time: string;
-  end_time: string;
-}
+import type { Availability } from "@/integrations/api/types";
+import {
+  findCommonAvailabilitySlots,
+  formatDateLabel,
+  formatTimeLabel,
+  groupAvailabilityByDate,
+} from "@/lib/availability";
 
 interface AvailabilityDisplayProps {
   availability: Availability[];
 }
 
-interface CommonAvailabilitySlot {
-  date: string;
-  startTime: string;
-  endTime: string;
-  participants: string[];
-}
-
 const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
-  const [processedCommonSlots, setProcessedCommonSlots] = useState<
-    CommonAvailabilitySlot[]
-  >([]);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  const timeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-
-  const minutesToTime = (totalMinutes: number): string => {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  const areParticipantArraysEqual = (
-    arr1: string[],
-    arr2: string[]
-  ): boolean => {
-    if (arr1.length !== arr2.length) return false;
-    const sortedArr1 = [...arr1].sort();
-    const sortedArr2 = [...arr2].sort();
-    return sortedArr1.every((value, index) => value === sortedArr2[index]);
-  };
-
   // Professional avatar color system
-  const getAvatarColor = (participantName: string) => {
+  const getAvatarColor = (participantName: string): string => {
     const colors = [
       "bg-blue-500 text-white",
       "bg-emerald-500 text-white",
@@ -105,102 +52,11 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
       .join("");
   };
 
-  // Group availability by date
-  const groupedAvailability = availability.reduce((acc, item) => {
-    const date = item.available_date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(item);
-    return acc;
-  }, {} as Record<string, Availability[]>);
-
-  useEffect(() => {
-    if (availability.length < 2) {
-      setProcessedCommonSlots([]);
-      return;
-    }
-
-    const newCommonSlots: CommonAvailabilitySlot[] = [];
-
-    // Group availability by date first
-    const availabilityByDate = availability.reduce((acc, item) => {
-      const date = item.available_date;
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(item);
-      return acc;
-    }, {} as Record<string, Availability[]>);
-
-    Object.keys(availabilityByDate).forEach((date) => {
-      const dailyAvailability = availabilityByDate[date];
-      if (dailyAvailability.length < 2) return;
-
-      const timePoints = new Set<number>();
-      dailyAvailability.forEach((slot) => {
-        timePoints.add(timeToMinutes(slot.start_time));
-        timePoints.add(timeToMinutes(slot.end_time));
-      });
-
-      const sortedTimePoints = Array.from(timePoints).sort((a, b) => a - b);
-      const elementarySlots: CommonAvailabilitySlot[] = [];
-
-      for (let i = 0; i < sortedTimePoints.length - 1; i++) {
-        const intervalStart = sortedTimePoints[i];
-        const intervalEnd = sortedTimePoints[i + 1];
-
-        if (intervalStart === intervalEnd) continue;
-
-        const participantsInInterval: string[] = [];
-        dailyAvailability.forEach((slot) => {
-          const slotStart = timeToMinutes(slot.start_time);
-          const slotEnd = timeToMinutes(slot.end_time);
-          if (slotStart <= intervalStart && slotEnd >= intervalEnd) {
-            participantsInInterval.push(slot.participant_name);
-          }
-        });
-
-        if (participantsInInterval.length >= 2) {
-          elementarySlots.push({
-            date: date,
-            startTime: minutesToTime(intervalStart),
-            endTime: minutesToTime(intervalEnd),
-            participants: [...new Set(participantsInInterval)].sort(),
-          });
-        }
-      }
-
-      if (elementarySlots.length > 0) {
-        let currentMergedSlot = { ...elementarySlots[0] };
-        for (let i = 1; i < elementarySlots.length; i++) {
-          const nextSlot = elementarySlots[i];
-          if (
-            nextSlot.startTime === currentMergedSlot.endTime &&
-            areParticipantArraysEqual(
-              nextSlot.participants,
-              currentMergedSlot.participants
-            )
-          ) {
-            currentMergedSlot.endTime = nextSlot.endTime;
-          } else {
-            newCommonSlots.push(currentMergedSlot);
-            currentMergedSlot = { ...nextSlot };
-          }
-        }
-        newCommonSlots.push(currentMergedSlot);
-      }
-    });
-    // Sort common slots by date and then by start time
-    newCommonSlots.sort((a, b) => {
-      const dateComparison = a.date.localeCompare(b.date);
-      if (dateComparison !== 0) return dateComparison;
-      return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
-    });
-    setProcessedCommonSlots(newCommonSlots);
-  }, [availability]);
-
-  const sortedDates = Object.keys(groupedAvailability).sort();
+  const days = useMemo(() => groupAvailabilityByDate(availability), [availability]);
+  const processedCommonSlots = useMemo(
+    () => findCommonAvailabilitySlots(availability),
+    [availability]
+  );
 
   if (availability.length === 0) {
     return (
@@ -238,19 +94,17 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-6">
-          {sortedDates.map((date) => (
+          {days.map(({ date, entries }) => (
             <div
               key={date}
               className="border-l-4 border-blue-500 pl-4 bg-slate-50/50 p-4 rounded-lg shadow-sm"
             >
               <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                 <Calendar className="h-4 w-4" />
-                {formatDate(date)}
+                {formatDateLabel(date)}
               </h3>
               <div className="space-y-2">
-                {groupedAvailability[date]
-                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                  .map((item) => (
+                {entries.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition-shadow"
@@ -272,8 +126,8 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                       </Badge>
                       <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
                         <Clock className="h-3 w-3" />
-                        {formatTime(item.start_time)} -{" "}
-                        {formatTime(item.end_time)}
+                        {formatTimeLabel(item.start_time)} -{" "}
+                        {formatTimeLabel(item.end_time)}
                       </div>
                     </div>
                   ))}
@@ -296,7 +150,7 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                 >
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-700">
                     <Calendar className="h-4 w-4" />
-                    {formatDate(commonSlot.date)}
+                    {formatDateLabel(commonSlot.date)}
                   </h3>
                   <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-emerald-200">
                     <div className="flex -space-x-2">
@@ -328,8 +182,8 @@ const AvailabilityDisplay = ({ availability }: AvailabilityDisplayProps) => {
                     </div>
                     <div className="flex items-center gap-1 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-md ml-auto">
                       <Clock className="h-3 w-3" />
-                      {formatTime(commonSlot.startTime)} -{" "}
-                      {formatTime(commonSlot.endTime)}
+                      {formatTimeLabel(commonSlot.startTime)} -{" "}
+                      {formatTimeLabel(commonSlot.endTime)}
                     </div>
                   </div>
                 </div>

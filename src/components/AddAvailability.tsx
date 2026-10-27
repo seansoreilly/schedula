@@ -1,49 +1,35 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { availabilityQueries } from "@/integrations/api/queries";
+import { Card, CardContent } from "@/components/ui/card";
+import { parseAvailabilityDraft } from "@/integrations/api/types";
+import type { AvailabilityDraft } from "@/integrations/api/types";
 import { useToast } from "@/hooks/use-toast";
+import {
+  createEndTimeOptions,
+  createStartTimeOptions,
+  defaultEndTime,
+  getAvailabilityDefaults,
+  todayDateInputValue,
+} from "@/lib/availability";
+import { describeDraftFailure, describeSubmitError } from "@/lib/form-feedback";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
-// Utility function to get the next 30-minute segment
-const getNextThirtyMinuteSegment = () => {
-  const now = new Date();
-  const minutes = now.getMinutes();
-  const hours = now.getHours();
-  
-  // Round up to the next 30-minute mark
-  let nextMinutes: number;
-  let nextHours = hours;
-  
-  if (minutes === 0) {
-    nextMinutes = 30;
-  } else if (minutes <= 30) {
-    nextMinutes = 30;
-  } else {
-    nextMinutes = 0;
-    nextHours = (hours + 1) % 24;
-  }
-  
-  return `${nextHours.toString().padStart(2, "0")}:${nextMinutes.toString().padStart(2, "0")}`;
-};
+const startTimeOptions = createStartTimeOptions();
+const endTimeOptions = createEndTimeOptions();
 
 interface AddAvailabilityProps {
   meetingId: string;
-  onAvailabilityAdded: () => void;
+  onSubmit: (draft: AvailabilityDraft) => Promise<void>;
 }
 
-const AddAvailability = ({
-  meetingId,
-  onAvailabilityAdded,
-}: AddAvailabilityProps) => {
+const AddAvailability = ({ meetingId, onSubmit }: AddAvailabilityProps) => {
+  const [initialDefaults] = useState(getAvailabilityDefaults);
   const [participantName, setParticipantName] = useState("");
-  const [availableDate, setAvailableDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [startTime, setStartTime] = useState(getNextThirtyMinuteSegment());
-  const [endTime, setEndTime] = useState("");
+  const [availableDate, setAvailableDate] = useState(initialDefaults.availableDate);
+  const [startTime, setStartTime] = useState(initialDefaults.startTime);
+  const [endTime, setEndTime] = useState(initialDefaults.endTime);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -65,88 +51,50 @@ const AddAvailability = ({
   // Auto-calculate end time when start time changes
   useEffect(() => {
     if (startTime) {
-      const [hours, minutes] = startTime.split(":").map(Number);
-      const startDate = new Date();
-      startDate.setHours(hours, minutes, 0, 0);
-
-      // Add 30 minutes
-      const endDate = new Date(startDate.getTime() + 30 * 60000);
-
-      const endHours = endDate.getHours().toString().padStart(2, "0");
-      const endMinutes = endDate.getMinutes().toString().padStart(2, "0");
-      setEndTime(`${endHours}:${endMinutes}`);
+      setEndTime(defaultEndTime(startTime));
     }
   }, [startTime]);
-
-  const generateTimeOptions = () => {
-    const times = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, "0")}:${minute
-          .toString()
-          .padStart(2, "0")}`;
-        times.push(timeString);
-      }
-    }
-    return times;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!participantName.trim() || !availableDate || !startTime || !endTime) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (startTime >= endTime) {
-      toast({
-        title: "Invalid Time Range",
-        description: "End time must be after start time.",
-        variant: "destructive",
-      });
+    const parsed = parseAvailabilityDraft({
+      meeting_id: meetingId,
+      participant_name: participantName,
+      available_date: availableDate,
+      start_time: startTime,
+      end_time: endTime,
+    });
+    if (!parsed.ok) {
+      toast({ ...describeDraftFailure(parsed), variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await availabilityQueries.create({
-        meeting_id: meetingId,
-        participant_name: participantName.trim(),
-        available_date: availableDate,
-        start_time: startTime,
-        end_time: endTime,
-      });
+      await onSubmit(parsed.value);
 
       toast({
         title: "Availability Added Successfully",
         description: "Your availability has been recorded for this meeting.",
       });
 
-      // Reset form but keep name
-      setAvailableDate(new Date().toISOString().split("T")[0]);
-      setStartTime("");
-      setEndTime("");
-
-      onAvailabilityAdded();
+      // Reset the range but preserve the participant name.
+      const defaults = getAvailabilityDefaults();
+      setAvailableDate(defaults.availableDate);
+      setStartTime(defaults.startTime);
+      setEndTime(defaults.endTime);
     } catch (error) {
       console.error("Error adding availability:", error);
       toast({
-        title: "Error",
-        description: "Failed to add availability. Please try again.",
+        ...describeSubmitError(error, "Failed to add availability. Please try again."),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const timeOptions = generateTimeOptions();
 
   return (
     <Card className="shadow-sm border border-slate-200 bg-white">
@@ -185,7 +133,7 @@ const AddAvailability = ({
                 value={availableDate}
                 onChange={(e) => setAvailableDate(e.target.value)}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                min={new Date().toISOString().split("T")[0]}
+                min={todayDateInputValue()}
               />
             </div>
 
@@ -204,7 +152,7 @@ const AddAvailability = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select start time</option>
-                {timeOptions.map((time) => (
+                {startTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {time}
                   </option>
@@ -227,7 +175,7 @@ const AddAvailability = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Auto-filled (+30 min)</option>
-                {timeOptions.map((time) => (
+                {endTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {time}
                   </option>

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import { useMeetingPage } from "@/hooks/use-meeting-page";
 import AddAvailability from "./AddAvailability";
 import AvailabilityDisplay from "./AvailabilityDisplay";
 import ShareMeeting from "./ShareMeeting";
@@ -18,72 +18,49 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface Meeting {
-  id: string;
-  title: string;
-  creator_name: string;
-  created_at: string;
-}
-
-interface Availability {
-  id: string;
-  participant_name: string;
-  available_date: string;
-  start_time: string;
-  end_time: string;
-}
-
 const MeetingView = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
-  const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [availability, setAvailability] = useState<Availability[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { status, meeting, availability, reload, rename, addAvailability } =
+    useMeetingPage(meetingId);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
   const { toast } = useToast();
+  const participantCount = new Set(
+    availability.map((entry) => entry.participant_name)
+  ).size;
 
-  const fetchMeetingData = async () => {
-    if (!meetingId) return;
-
-    try {
-      // Fetch meeting details
-      const meetingData = await meetingQueries.findById(meetingId);
-      if (!meetingData) throw new Error("Meeting not found");
-      
-      setMeeting(meetingData);
-      setEditedTitle(meetingData.title);
-
-      // Fetch availability data
-      const availabilityData = await availabilityQueries.findByMeetingId(meetingId);
-      setAvailability(availabilityData || []);
-    } catch (error) {
-      console.error("Error fetching meeting data:", error);
+  useEffect(() => {
+    if (status === "error") {
       toast({
-        title: "Error",
-        description: "Failed to load meeting. Please check the URL.",
+        title: "Unable to Load Meeting",
+        description: "Please check your connection and try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    if (status !== "ready") {
+      setIsEditingTitle(false);
+    }
+  }, [status, toast]);
+
+  const handleStartEdit = () => {
+    setEditedTitle(meeting?.title ?? "");
+    setIsEditingTitle(true);
   };
 
   const handleTitleUpdate = async () => {
-    if (!meeting || !editedTitle.trim()) return;
+    if (!meeting || !editedTitle.trim() || isSavingTitle) return;
 
+    setIsSavingTitle(true);
     try {
-      const updatedMeeting = await meetingQueries.update(meeting.id, {
-        title: editedTitle.trim(),
-      });
-
-      if (updatedMeeting) {
-        setMeeting(updatedMeeting);
-      }
+      const wasRenamed = await rename(editedTitle.trim());
       setIsEditingTitle(false);
-      toast({
-        title: "Meeting Title Updated",
-        description: "The meeting title has been successfully updated.",
-      });
+      if (wasRenamed) {
+        toast({
+          title: "Meeting Title Updated",
+          description: "The meeting title has been successfully updated.",
+        });
+      }
     } catch (error) {
       console.error("Error updating title:", error);
       toast({
@@ -91,6 +68,8 @@ const MeetingView = () => {
         description: "Failed to update title. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingTitle(false);
     }
   };
 
@@ -99,15 +78,7 @@ const MeetingView = () => {
     setIsEditingTitle(false);
   };
 
-  useEffect(() => {
-    fetchMeetingData();
-  }, [meetingId]);
-
-  const handleAvailabilityAdded = () => {
-    fetchMeetingData(); // Refresh data when new availability is added
-  };
-
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="max-w-6xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -125,7 +96,7 @@ const MeetingView = () => {
     );
   }
 
-  if (!meeting) {
+  if (status === "not-found") {
     return (
       <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -144,6 +115,31 @@ const MeetingView = () => {
         </Card>
       </div>
     );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <Card className="shadow-lg border border-slate-200 bg-white">
+          <CardContent className="p-12 text-center">
+            <div className="text-slate-400 mb-6">
+              <Calendar className="h-20 w-20 mx-auto" />
+            </div>
+            <h3 className="text-2xl font-semibold text-slate-800 mb-4">
+              Unable to Load Meeting
+            </h3>
+            <p className="text-slate-600 text-lg leading-relaxed max-w-md mx-auto mb-6">
+              We couldn&apos;t load this meeting right now. Check your connection and try again.
+            </p>
+            <Button onClick={reload}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!meeting) {
+    return null;
   }
 
   return (
@@ -177,6 +173,8 @@ const MeetingView = () => {
                     size="sm"
                     variant="ghost"
                     className="text-white hover:bg-white/10 p-2"
+                    aria-label="Save meeting title"
+                    disabled={isSavingTitle}
                   >
                     <Check className="h-5 w-5" />
                   </Button>
@@ -185,6 +183,8 @@ const MeetingView = () => {
                     size="sm"
                     variant="ghost"
                     className="text-white hover:bg-white/10 p-2"
+                    aria-label="Cancel editing meeting title"
+                    disabled={isSavingTitle}
                   >
                     <X className="h-5 w-5" />
                   </Button>
@@ -192,14 +192,15 @@ const MeetingView = () => {
               ) : (
                 <div className="group">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-3xl lg:text-4xl font-bold">
+                    <CardTitle className="text-3xl lg:text-4xl font-bold">
                       {meeting.title}
-                    </h1>
+                    </CardTitle>
                     <Button
-                      onClick={() => setIsEditingTitle(true)}
+                      onClick={handleStartEdit}
                       size="sm"
                       variant="ghost"
                       className="text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity p-2"
+                      aria-label="Edit meeting title"
                     >
                       <Edit3 className="h-5 w-5" />
                     </Button>
@@ -222,8 +223,8 @@ const MeetingView = () => {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       <span>
-                        {availability.length} participant
-                        {availability.length !== 1 ? "s" : ""}
+                        {participantCount} participant
+                        {participantCount !== 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
@@ -240,7 +241,7 @@ const MeetingView = () => {
       {/* Add Availability */}
       <AddAvailability
         meetingId={meeting.id}
-        onAvailabilityAdded={handleAvailabilityAdded}
+        onSubmit={addAvailability}
       />
 
       {/* Display Availability */}

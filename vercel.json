@@ -1,19 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/meeting/:meetingId",
+      "source": "/((?!api/|src/|@vite/|@react-refresh|node_modules/|.*\\..*).*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/meeting/(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
-        }
-      ]
     }
   ]
 }

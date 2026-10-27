@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { meetingQueries } from "@/integrations/api/queries";
+import { parseMeetingDraft } from "@/integrations/api/types";
 import { useToast } from "@/hooks/use-toast";
+import { describeDraftFailure, describeSubmitError } from "@/lib/form-feedback";
 import {
   Calendar,
   Clock,
@@ -27,22 +29,16 @@ const CreateMeeting = () => {
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !creatorName.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in both meeting title and your name.",
-        variant: "destructive",
-      });
+    const parsed = parseMeetingDraft({ title, creator_name: creatorName });
+    if (!parsed.ok) {
+      toast({ ...describeDraftFailure(parsed), variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const data = await meetingQueries.create({
-        title: title.trim(),
-        creator_name: creatorName.trim(),
-      });
+      const data = await meetingQueries.create(parsed.value);
 
       toast({
         title: "Meeting Created Successfully!",
@@ -53,8 +49,7 @@ const CreateMeeting = () => {
     } catch (error) {
       console.error("Error creating meeting:", error);
       toast({
-        title: "Error",
-        description: "Failed to create meeting. Please try again.",
+        ...describeSubmitError(error, "Failed to create meeting. Please try again."),
         variant: "destructive",
       });
     } finally {
