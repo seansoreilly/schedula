@@ -30,8 +30,10 @@ enabled = false
 [realtime]
 enabled = false
 
+# Auth stays enabled so `supabase status` prints the anon key; CI still skips
+# the gotrue container with `supabase start -x gotrue`.
 [auth]
-enabled = false
+enabled = true
 
 [edge_runtime]
 enabled = false
