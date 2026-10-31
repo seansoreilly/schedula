@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { meetingQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import { classifyError, track } from "@/lib/analytics";
 import {
   Calendar,
   Clock,
@@ -44,6 +45,8 @@ const CreateMeeting = () => {
         creator_name: creatorName.trim(),
       });
 
+      track("meeting_created", {});
+
       toast({
         title: "Meeting Created Successfully!",
         description: "Your meeting space is ready for coordination.",
@@ -52,6 +55,7 @@ const CreateMeeting = () => {
       navigate(`/meeting/${data.id}`);
     } catch (error) {
       console.error("Error creating meeting:", error);
+      track("meeting_create_error", { error_type: classifyError(error) });
       toast({
         title: "Error",
         description: "Failed to create meeting. Please try again.",

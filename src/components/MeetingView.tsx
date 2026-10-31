@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import { classifyError, track } from "@/lib/analytics";
 import AddAvailability from "./AddAvailability";
 import AvailabilityDisplay from "./AvailabilityDisplay";
 import ShareMeeting from "./ShareMeeting";
@@ -58,6 +59,7 @@ const MeetingView = () => {
       setAvailability(availabilityData || []);
     } catch (error) {
       console.error("Error fetching meeting data:", error);
+      track("meeting_load_error", { error_type: classifyError(error) });
       toast({
         title: "Error",
         description: "Failed to load meeting. Please check the URL.",

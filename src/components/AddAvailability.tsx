@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
+import { classifyError, track } from "@/lib/analytics";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
 // Utility function to get the next 30-minute segment
@@ -33,6 +34,15 @@ interface AddAvailabilityProps {
   meetingId: string;
   onAvailabilityAdded: () => void;
 }
+
+/** Length of an HH:MM time range in minutes. */
+const minutesBetween = (start: string, end: string): number => {
+  const toMinutes = (t: string): number => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  return toMinutes(end) - toMinutes(start);
+};
 
 const AddAvailability = ({
   meetingId,
@@ -123,6 +133,10 @@ const AddAvailability = ({
         end_time: endTime,
       });
 
+      track("availability_added", {
+        duration_minutes: minutesBetween(startTime, endTime),
+      });
+
       toast({
         title: "Availability Added Successfully",
         description: "Your availability has been recorded for this meeting.",
@@ -136,6 +150,7 @@ const AddAvailability = ({
       onAvailabilityAdded();
     } catch (error) {
       console.error("Error adding availability:", error);
+      track("availability_add_error", { error_type: classifyError(error) });
       toast({
         title: "Error",
         description: "Failed to add availability. Please try again.",
