@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 import {
   validateAvailabilityCreate,
   validateMeetingCreate,
   validateMeetingUpdate,
-} from "../api/_lib/validation.ts";
+} from "../api/_lib/validation";
 import {
   parseAvailabilityList,
   parseMeeting,
-} from "../src/integrations/api/types.ts";
+} from "../src/integrations/api/types";
 
 const meetingId = "11111111-1111-4111-8111-111111111111";
 
