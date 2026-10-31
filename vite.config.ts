@@ -13,6 +13,13 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     strictPort: true,
     historyApiFallback: true,
+    proxy: {
+      // API handlers run on :3001 via `npm run dev:api` (scripts/dev-api-server.ts).
+      '/api': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),

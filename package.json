@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:api": "tsx scripts/dev-api-server.ts",
     "dev:vercel": "vercel dev --listen 3000",
     "dev:full": "./start-dev.sh",
     "typecheck": "tsc --build",
@@ -53,6 +54,7 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.23.15",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vercel": "^58.9.0",

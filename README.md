@@ -119,7 +119,8 @@ npm run lint         # Run ESLint
 
 # Testing
 npm run test:unit    # Run deterministic domain and API contract tests
-npm test             # Run Playwright tests through Vercel dev
+npm run dev:api      # Start the API handlers on :3001 (needs a local `supabase start`)
+npm test             # Run Playwright tests (starts API + Vite; local Supabase only)
 ```
 
 ## 🚀 Deployment

@@ -62,11 +62,25 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev:vercel',
-    url: 'http://127.0.0.1:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  /*
+   * Start the API (scripts/dev-api-server.ts on :3001) and the Vite front end
+   * (:3000, proxies /api to :3001). The API needs SUPABASE_URL and
+   * SUPABASE_ANON_KEY for a local/throwaway Supabase stack (`supabase start`);
+   * it refuses non-local databases so the suite never writes to production.
+   */
+  webServer: [
+    {
+      command: 'npm run dev:api',
+      url: 'http://127.0.0.1:3001/api/availability',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      stdout: 'pipe',
+    },
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 });
