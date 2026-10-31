@@ -53,13 +53,14 @@ jobs:
       with:
         version: 2.90.0
 
-    - name: Start local Supabase (Postgres + PostgREST)
+    - name: Start local Supabase (Postgres, PostgREST, Kong, Auth)
       run: >-
         supabase start
-        -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
     - name: Point the API at the local stack
       run: |
+        supabase status -o env | cut -d= -f1
         supabase status -o env \
           | sed -n -e 's/^API_URL=/SUPABASE_URL=/p' -e 's/^ANON_KEY=/SUPABASE_ANON_KEY=/p' \
           | tr -d '"' > supabase-local.env
