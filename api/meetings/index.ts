@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http';
-import { supabase } from '../_lib/supabase';
-import { validateMeetingCreate } from '../_lib/validation';
+import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http.js';
+import { supabase } from '../_lib/supabase.js';
+import { validateMeetingCreate } from '../_lib/validation.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (prepareEndpoint(req, res, ['POST'])) {
