@@ -5,10 +5,13 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  { ignores: ["dist", "node_modules", "playwright-report", "test-results"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
@@ -23,7 +26,14 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: ["api/**/*.ts", "e2e/**/*.ts", "*.config.ts"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      parser: tseslint.parser,
+      globals: globals.node,
     },
   }
 );

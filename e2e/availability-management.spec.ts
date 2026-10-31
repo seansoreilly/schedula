@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Availability Management', () => {
-  let meetingUrl: string;
-
   test.beforeEach(async ({ page }) => {
     // Create a meeting first
     await page.goto('/');
@@ -12,7 +10,6 @@ test.describe('Availability Management', () => {
     
     // Wait for navigation and capture URL
     await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });
-    meetingUrl = page.url();
   });
 
   test('should add availability successfully', async ({ page }) => {
@@ -36,11 +33,11 @@ test.describe('Availability Management', () => {
     await page.click('button:has-text("Add My Availability")');
 
     // Should show success message
-    await expect(page.locator('text=Success, text=Added')).toBeVisible();
+    await expect(page.getByText('Availability Added Successfully').first()).toBeVisible();
 
     // Should display the added availability
-    await expect(page.locator('text=John Doe')).toBeVisible();
-    await expect(page.locator('text=09:00')).toBeVisible();
+    await expect(page.getByText('John Doe').first()).toBeVisible();
+    await expect(page.getByText('9:00 AM').first()).toBeVisible();
   });
 
   test('should validate availability form fields', async ({ page }) => {
@@ -48,7 +45,7 @@ test.describe('Availability Management', () => {
     await page.click('button:has-text("Add My Availability")');
 
     // Should show validation error
-    await expect(page.locator('text=Missing Information, text=required')).toBeVisible();
+    await expect(page.getByText('Missing Information').first()).toBeVisible();
   });
 
   test('should validate time range', async ({ page }) => {
@@ -66,7 +63,7 @@ test.describe('Availability Management', () => {
     await page.click('button:has-text("Add My Availability")');
 
     // Should show time validation error
-    await expect(page.locator('text=Invalid Time Range, text=after')).toBeVisible();
+    await expect(page.getByText('Invalid Time Range').first()).toBeVisible();
   });
 
   test('should persist user name in localStorage', async ({ page }) => {
@@ -104,7 +101,7 @@ test.describe('Availability Management', () => {
     await page.click('button:has-text("Add My Availability")');
 
     // Wait for success message
-    await expect(page.locator('text=Success, text=Added')).toBeVisible();
+    await expect(page.getByText('Availability Added Successfully').first()).toBeVisible();
 
     // Add second availability (different time)
     await page.selectOption('select:near(:text("Start Time"))', '14:00');
@@ -112,7 +109,7 @@ test.describe('Availability Management', () => {
     await page.click('button:has-text("Add My Availability")');
 
     // Should show both availabilities
-    await expect(page.locator('text=09:00')).toBeVisible();
-    await expect(page.locator('text=14:00')).toBeVisible();
+    await expect(page.getByText('9:00 AM').first()).toBeVisible();
+    await expect(page.getByText('2:00 PM').first()).toBeVisible();
   });
 });

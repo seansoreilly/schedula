@@ -80,7 +80,7 @@ test.describe('Responsive Design Tests', () => {
     }
   });
 
-  test('should handle touch interactions', async ({ page, isMobile }) => {
+  test('should handle touch interactions', async ({ page, isMobile, hasTouch }) => {
     if (!isMobile) {
       await page.setViewportSize({ width: 375, height: 667 });
     }
@@ -100,8 +100,12 @@ test.describe('Responsive Design Tests', () => {
     await page.fill('input[placeholder*="Q4 Strategy Review"]', 'Touch Test Meeting');
     await page.fill('input[placeholder*="full name"]', 'Touch User');
     
-    // Tap the button (mobile-style interaction)
-    await page.tap('button:has-text("Create Meeting")');
+    // Tap the button (mobile-style interaction); tap needs a touch-enabled context
+    if (hasTouch) {
+      await page.tap('button:has-text("Create Meeting")');
+    } else {
+      await page.click('button:has-text("Create Meeting")');
+    }
     
     // Should work the same as click
     await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });
@@ -113,7 +117,7 @@ test.describe('Responsive Design Tests', () => {
     await page.goto('/');
 
     // Verify initial layout
-    await expect(page.locator('input[placeholder*="Meeting"]')).toBeVisible();
+    await expect(page.locator('input[placeholder*="Q4 Strategy Review"]')).toBeVisible();
 
     // Switch to landscape
     await page.setViewportSize({ width: 667, height: 375 });

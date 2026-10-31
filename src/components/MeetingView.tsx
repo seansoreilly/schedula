@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,69 +18,105 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Availability, Meeting } from "@/integrations/api/types";
 
-interface Meeting {
-  id: string;
-  title: string;
-  creator_name: string;
-  created_at: string;
-}
-
-interface Availability {
-  id: string;
-  participant_name: string;
-  available_date: string;
-  start_time: string;
-  end_time: string;
-}
+type LoadState = "loading" | "ready" | "not-found" | "error";
 
 const MeetingView = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [availability, setAvailability] = useState<Availability[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [reloadCount, setReloadCount] = useState(0);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
   const { toast } = useToast();
+  const participantCount = new Set(
+    availability.map((entry) => entry.participant_name)
+  ).size;
 
-  const fetchMeetingData = async () => {
-    if (!meetingId) return;
+  useEffect(() => {
+    let isCurrentRequest = true;
 
-    try {
-      // Fetch meeting details
-      const meetingData = await meetingQueries.findById(meetingId);
-      if (!meetingData) throw new Error("Meeting not found");
-      
-      setMeeting(meetingData);
-      setEditedTitle(meetingData.title);
+    async function loadMeetingData(): Promise<void> {
+      setLoadState("loading");
+      setMeeting(null);
+      setAvailability([]);
+      setIsEditingTitle(false);
 
-      // Fetch availability data
-      const availabilityData = await availabilityQueries.findByMeetingId(meetingId);
-      setAvailability(availabilityData || []);
-    } catch (error) {
-      console.error("Error fetching meeting data:", error);
-      track("meeting_load_error", { error_type: classifyError(error) });
-      toast({
-        title: "Error",
-        description: "Failed to load meeting. Please check the URL.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      if (!meetingId) {
+        setLoadState("not-found");
+        return;
+      }
+
+      try {
+        const meetingData = await meetingQueries.findById(meetingId);
+
+        if (!isCurrentRequest) {
+          return;
+        }
+
+        if (!meetingData) {
+          // A missing meeting was reported as a server error before the
+          // API refactor; keep the event stream comparable.
+          track("meeting_load_error", { error_type: "server" });
+          setLoadState("not-found");
+          return;
+        }
+
+        const availabilityData = await availabilityQueries.findByMeetingId(meetingId);
+
+        if (!isCurrentRequest) {
+          return;
+        }
+
+        setMeeting(meetingData);
+        setEditedTitle(meetingData.title);
+        setAvailability(availabilityData);
+        setLoadState("ready");
+      } catch (error) {
+        if (!isCurrentRequest) {
+          return;
+        }
+
+        console.error("Error fetching meeting data:", error);
+        track("meeting_load_error", { error_type: classifyError(error) });
+        setLoadState("error");
+        toast({
+          title: "Unable to Load Meeting",
+          description: "Please check your connection and try again.",
+          variant: "destructive",
+        });
+      }
     }
-  };
+
+    void loadMeetingData();
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [meetingId, reloadCount, toast]);
 
   const handleTitleUpdate = async () => {
-    if (!meeting || !editedTitle.trim()) return;
+    if (!meeting || !editedTitle.trim() || isSavingTitle) return;
 
+    setIsSavingTitle(true);
     try {
       const updatedMeeting = await meetingQueries.update(meeting.id, {
         title: editedTitle.trim(),
       });
 
-      if (updatedMeeting) {
-        setMeeting(updatedMeeting);
+      if (!updatedMeeting) {
+        setMeeting(null);
+        setAvailability([]);
+        setIsEditingTitle(false);
+        setLoadState("not-found");
+        return;
       }
+
+      setMeeting(updatedMeeting);
+      setEditedTitle(updatedMeeting.title);
       setIsEditingTitle(false);
       toast({
         title: "Meeting Title Updated",
@@ -93,6 +129,8 @@ const MeetingView = () => {
         description: "Failed to update title. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingTitle(false);
     }
   };
 
@@ -101,15 +139,11 @@ const MeetingView = () => {
     setIsEditingTitle(false);
   };
 
-  useEffect(() => {
-    fetchMeetingData();
-  }, [meetingId]);
-
-  const handleAvailabilityAdded = () => {
-    fetchMeetingData(); // Refresh data when new availability is added
+  const reloadMeeting = (): void => {
+    setReloadCount((count) => count + 1);
   };
 
-  if (isLoading) {
+  if (loadState === "loading") {
     return (
       <div className="max-w-6xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -127,7 +161,7 @@ const MeetingView = () => {
     );
   }
 
-  if (!meeting) {
+  if (loadState === "not-found") {
     return (
       <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg border border-slate-200 bg-white">
@@ -146,6 +180,31 @@ const MeetingView = () => {
         </Card>
       </div>
     );
+  }
+
+  if (loadState === "error") {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <Card className="shadow-lg border border-slate-200 bg-white">
+          <CardContent className="p-12 text-center">
+            <div className="text-slate-400 mb-6">
+              <Calendar className="h-20 w-20 mx-auto" />
+            </div>
+            <h3 className="text-2xl font-semibold text-slate-800 mb-4">
+              Unable to Load Meeting
+            </h3>
+            <p className="text-slate-600 text-lg leading-relaxed max-w-md mx-auto mb-6">
+              We couldn&apos;t load this meeting right now. Check your connection and try again.
+            </p>
+            <Button onClick={reloadMeeting}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!meeting) {
+    return null;
   }
 
   return (
@@ -179,6 +238,8 @@ const MeetingView = () => {
                     size="sm"
                     variant="ghost"
                     className="text-white hover:bg-white/10 p-2"
+                    aria-label="Save meeting title"
+                    disabled={isSavingTitle}
                   >
                     <Check className="h-5 w-5" />
                   </Button>
@@ -187,6 +248,8 @@ const MeetingView = () => {
                     size="sm"
                     variant="ghost"
                     className="text-white hover:bg-white/10 p-2"
+                    aria-label="Cancel editing meeting title"
+                    disabled={isSavingTitle}
                   >
                     <X className="h-5 w-5" />
                   </Button>
@@ -202,6 +265,7 @@ const MeetingView = () => {
                       size="sm"
                       variant="ghost"
                       className="text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity p-2"
+                      aria-label="Edit meeting title"
                     >
                       <Edit3 className="h-5 w-5" />
                     </Button>
@@ -224,8 +288,8 @@ const MeetingView = () => {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       <span>
-                        {availability.length} participant
-                        {availability.length !== 1 ? "s" : ""}
+                        {participantCount} participant
+                        {participantCount !== 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
@@ -242,7 +306,7 @@ const MeetingView = () => {
       {/* Add Availability */}
       <AddAvailability
         meetingId={meeting.id}
-        onAvailabilityAdded={handleAvailabilityAdded}
+        onAvailabilityAdded={reloadMeeting}
       />
 
       {/* Display Availability */}

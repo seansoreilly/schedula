@@ -11,7 +11,7 @@ Schedula is a modern web application designed to streamline the process of findi
 ### 🎯 **Smart Meeting Management**
 
 - **Instant Setup**: Create meetings in seconds with just a title and organizer name
-- **Editable Details**: Update meeting information in real-time with inline editing
+- **Editable Details**: Update meeting information with inline editing
 - **Unique Shareable URLs**: Each meeting generates a secure, shareable link
 - **No Account Required**: Participants can join without creating accounts
 
@@ -26,7 +26,7 @@ Schedula is a modern web application designed to streamline the process of findi
 
 - **Consolidated View**: Clear visual representation of all participant availability
 - **Overlap Detection**: Automatically identifies common available time slots
-- **Participant Tracking**: Real-time visibility of submission status
+- **Participant Tracking**: Visibility of submitted availability
 - **Mobile-Optimized**: Responsive design that works across all devices
 
 ## 🚀 Technology Stack
@@ -39,14 +39,11 @@ Schedula is a modern web application designed to streamline the process of findi
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first styling framework
 - **[shadcn/ui](https://ui.shadcn.com/)** - Professional component library
 - **[React Router](https://reactrouter.com/)** - Client-side routing
-- **[React Query](https://tanstack.com/query/)** - Server state management
-- **[React Hook Form](https://react-hook-form.com/)** - Performant forms with validation
 
 ### **Backend & Infrastructure**
 
-- **[Supabase](https://supabase.io/)** - PostgreSQL database with real-time features
-- **[Vercel](https://vercel.com/)** - Edge deployment platform
-- **[Redis](https://redis.io/)** - Caching layer for performance optimization
+- **[Supabase](https://supabase.com/)** - PostgreSQL database
+- **[Vercel Functions](https://vercel.com/docs/functions)** - API deployment platform
 
 ### **Development Tools**
 
@@ -59,7 +56,7 @@ Schedula is a modern web application designed to streamline the process of findi
 ### **Prerequisites**
 
 - [Node.js](https://nodejs.org/) (LTS version recommended)
-- [Bun](https://bun.sh/docs/installation) (recommended) or npm
+- npm (bundled with Node.js)
 - [Git](https://git-scm.com/)
 - Supabase account for database
 
@@ -73,10 +70,6 @@ cd schedula
 ### **2. Install Dependencies**
 
 ```bash
-# Using Bun (recommended)
-bun install
-
-# Or using npm
 npm install
 ```
 
@@ -92,14 +85,8 @@ Add your environment variables:
 
 ```env
 # Supabase Configuration
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Optional: Redis Configuration
-VITE_REDIS_URL=your_redis_url
-
-# Optional: Analytics
-VITE_VERCEL_ANALYTICS_ID=your_analytics_id
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### **4. Database Setup**
@@ -108,71 +95,32 @@ VITE_VERCEL_ANALYTICS_ID=your_analytics_id
 
 1. Create a new project at [Supabase](https://supabase.com/)
 2. Navigate to the SQL Editor in your dashboard
-3. Run the following SQL to create the required tables:
-
-```sql
--- Create meetings table
-CREATE TABLE meetings (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    title TEXT NOT NULL,
-    creator_name TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create availability table
-CREATE TABLE availability (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    meeting_id UUID REFERENCES meetings(id) ON DELETE CASCADE,
-    participant_name TEXT NOT NULL,
-    available_date DATE NOT NULL,
-    start_time TIME WITHOUT TIME ZONE NOT NULL,
-    end_time TIME WITHOUT TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create indexes for better performance
-CREATE INDEX idx_availability_meeting_id ON availability(meeting_id);
-CREATE INDEX idx_availability_date ON availability(available_date);
-
--- Enable Row Level Security (RLS)
-ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE availability ENABLE ROW LEVEL SECURITY;
-
--- Create policies for public access (adjust as needed)
-CREATE POLICY "Enable read access for all users" ON meetings FOR SELECT USING (true);
-CREATE POLICY "Enable insert access for all users" ON meetings FOR INSERT WITH CHECK (true);
-CREATE POLICY "Enable update access for all users" ON meetings FOR UPDATE USING (true);
-
-CREATE POLICY "Enable read access for all users" ON availability FOR SELECT USING (true);
-CREATE POLICY "Enable insert access for all users" ON availability FOR INSERT WITH CHECK (true);
-CREATE POLICY "Enable delete access for all users" ON availability FOR DELETE USING (true);
-```
+3. Run [`supabase-schema.sql`](./supabase-schema.sql) in the Supabase SQL Editor. It creates the `schedula` schema, the `meetings` and `availability` tables, and the public-access RLS policies used by the API functions.
 
 ### **5. Start Development Server**
 
 ```bash
-# Using Bun
-bun run dev
-
-# Or using npm
-npm run dev
+npm run dev:full
 ```
 
-The application will be available at `http://localhost:5173`
+The full application, including `/api/*`, will be available at `http://localhost:3000`.
 
 ## 📦 Available Scripts
 
 ```bash
 # Development
-bun run dev          # Start development server
-bun run build        # Build for production
-bun run build:dev    # Build in development mode
-bun run preview      # Preview production build
-bun run lint         # Run ESLint
+npm run dev:full     # Validate .env and start Vercel + Vite on port 3000
+npm run dev          # Start Vite only (no API functions)
+npm run typecheck    # Check browser, API, and tooling TypeScript
+npm run build        # Typecheck, then build for production
+npm run build:dev    # Typecheck, then build in development mode
+npm run preview      # Preview the production bundle
+npm run lint         # Run ESLint
 
 # Testing
-npx playwright test  # Run end-to-end tests
+npm run test:unit    # Run deterministic domain and API contract tests
+npm run dev:api      # Start the API handlers on :3001 (needs a local `supabase start`)
+npm test             # Run Playwright tests (starts API + Vite; local Supabase only)
 ```
 
 ## 🚀 Deployment
@@ -186,21 +134,21 @@ npx playwright test  # Run end-to-end tests
 
 2. **Configure Build Settings**
 
-   - Build Command: `bun run build` or `npm run build`
+   - Build Command: `npm run build`
    - Output Directory: `dist`
-   - Install Command: `bun install` or `npm install`
+   - Install Command: `npm install`
 
 3. **Environment Variables**
 
    - Add all environment variables from your `.env` file
-   - Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set
+   - Ensure `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set. The API functions use them to access the `schedula` schema.
 
 4. **Deploy**
    - Vercel will automatically deploy on every push to your main branch
 
 ### **Custom Deployment**
 
-The built files will be in the `dist/` directory after running `bun run build`. Deploy these static files to any hosting provider.
+The built files will be in the `dist/` directory after running `npm run build`. Deploy these static files to any hosting provider.
 
 ## 🎯 Use Cases
 
@@ -222,15 +170,16 @@ schedula/
 │   │   ├── MeetingView.tsx
 │   │   └── ShareMeeting.tsx
 │   ├── hooks/              # Custom React hooks
-│   ├── integrations/       # External service integrations
-│   │   ├── supabase/       # Supabase client and types
-│   │   └── redis/          # Redis client
+│   ├── integrations/       # API client and shared data types
 │   ├── lib/                # Utility functions
 │   ├── pages/              # Page components
 │   └── main.tsx            # Application entry point
 ├── public/                 # Static assets
-├── docs/                   # Documentation
-└── supabase/              # Supabase configuration
+├── api/                    # Vercel API functions
+├── supabase/               # Versioned database migrations
+├── supabase-schema.sql     # Fresh database schema and RLS setup
+├── tests/                  # Deterministic unit tests
+└── e2e/                    # Playwright tests
 ```
 
 ## 🤝 Contributing

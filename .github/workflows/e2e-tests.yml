@@ -29,10 +29,11 @@ jobs:
     - name: Build application
       run: npm run build
 
-  # The Playwright suite needs the API server on :3001, which CI doesn't start yet,
-  # so it only runs on demand until that's wired up.
+  # Runs the Playwright suite against a throwaway local Supabase stack (Postgres
+  # + PostgREST via `supabase start`, schema from supabase/migrations). It never
+  # touches production: no secrets are used and the API server refuses
+  # non-local databases.
   e2e:
-    if: github.event_name == 'workflow_dispatch'
     timeout-minutes: 60
     # Pinned: Playwright 1.55 can't install browsers on ubuntu-latest (26.04).
     runs-on: ubuntu-24.04
@@ -48,16 +49,37 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - uses: supabase/setup-cli@v1
+      with:
+        version: 2.90.0
+
+    - name: Start local Supabase (Postgres, PostgREST, Kong, Auth)
+      run: >-
+        supabase start
+        -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+    - name: Point the API at the local stack
+      run: |
+        supabase status -o env | cut -d= -f1
+        supabase status -o env \
+          | sed -n -e 's/^API_URL=/SUPABASE_URL=/p' -e 's/^ANON_KEY=/SUPABASE_ANON_KEY=/p' \
+          | tr -d '"' > supabase-local.env
+        grep -q '^SUPABASE_URL=.' supabase-local.env
+        grep -q '^SUPABASE_ANON_KEY=.' supabase-local.env
+        cat supabase-local.env >> "$GITHUB_ENV"
+
+    - name: Check the schedula schema is served
+      run: |
+        curl --fail-with-body -sS "$SUPABASE_URL/rest/v1/meetings?select=id&limit=1" \
+          -H "apikey: $SUPABASE_ANON_KEY" \
+          -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+          -H "Accept-Profile: schedula"
+
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Build application
-      run: npm run build
-
     - name: Run Playwright tests
       run: npm run test
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     - uses: actions/upload-artifact@v4
       if: always()
