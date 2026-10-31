@@ -31,7 +31,7 @@ const ShareMeeting = ({
       });
 
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast({
         title: "Copy Failed",
         description: "Failed to copy link. Please copy manually.",

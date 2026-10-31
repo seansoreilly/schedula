@@ -4,19 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Local Development (Critical Setup)
-- **Full dev setup**: `npm run dev:full` or `./start-dev.sh` (recommended - runs Vercel dev server with environment validation)
-- **Alternative setup**: Run both `npm run dev` (frontend) AND `vercel dev --listen 3001` (API) in separate terminals
-- **Frontend only**: `npm run dev` (Vite dev server on port 3000)
-- **API server**: `vercel dev --listen 3001` (serverless functions on port 3001)
+### Local Development
+- **Full application**: `npm run dev:full` (recommended) or `npm run dev:vercel`. Both run Vercel's local server on port 3000, serving the Vite app and `/api/*` functions together.
+- **Frontend-only Vite server**: `npm run dev`. It does not provide API functions.
 
 ### Build & Quality
-- **Build**: `npm run build` or `bun run build` 
+- **Typecheck**: `npm run typecheck` (or `npm run typecheck:app` / `npm run typecheck:api`)
+- **Build**: `npm run build` (runs typechecking before Vite's production build)
 - **Build dev**: `npm run build:dev` (development mode build)
 - **Lint**: `npm run lint`
 - **Preview**: `npm run preview` (preview production build)
 
 ### Testing
+- **Unit tests**: `npm run test:unit`
 - **E2E tests**: `npm run test` or `npx playwright test`
 - **Test UI**: `npm run test:ui` or `npx playwright test --ui`
 - **Test headed**: `npm run test:headed` (visible browser)
@@ -28,37 +28,26 @@ Schedula is a meeting scheduling application with a React frontend and Vercel se
 
 ### Critical Local Development Setup
 
-**The `/api/*` routes are Vercel serverless functions that require special handling in local development:**
-
-1. **Option 1 (Recommended)**: Use `npm run dev:full` which runs the setup script that validates environment and starts Vercel dev server
-2. **Option 2**: Manually run both servers:
-   - `npm run dev` (frontend on port 3000) 
-   - `vercel dev --listen 3001` (API on port 3001)
-   - Vite proxy configuration forwards `/api/*` requests from 3000 → 3001
+`/api/*` routes are Vercel serverless functions. Use `npm run dev:full` for any end-to-end work; it validates `.env` and starts the project-local Vercel CLI at `http://localhost:3000`.
 
 ### Technology Stack
 
-**Frontend**: React 18 + TypeScript + Vite build system + shadcn/ui components + TanStack Query for server state + React Router for routing
+**Frontend**: React 18 + TypeScript + Vite + shadcn/ui components + React Router
 
-**Backend**: Vercel serverless functions (`/api/` directory) with Supabase PostgreSQL database and Redis caching
+**Backend**: Vercel serverless functions (`/api/` directory) backed by Supabase PostgreSQL
 
 **API Architecture**:
-- `/api/meetings/` - POST to create meetings, GET to list
-- `/api/meetings/[id]` - GET/PUT/DELETE specific meeting  
-- `/api/availability/` - POST to create availability, GET with meeting_id query
+- `POST /api/meetings` - create a meeting
+- `GET` and `PUT /api/meetings/:id` - read or update a meeting
+- `GET /api/availability?meeting_id=:id` and `POST /api/availability` - list or add availability
 
 ### Database Architecture
 
-**Current Setup**: Transitioning from Neon to Supabase as primary database
-- Database client in `src/integrations/supabase/` 
-- API layer in `src/integrations/api/` abstracts database calls
-- Schema: `meetings` table with `availability` table (foreign key relationship)
-- Supabase schema: `schedula` (configured in API endpoints)
+**Current setup**: the API functions access the `schedula` Supabase schema. It contains `meetings` and `availability`, with availability rows belonging to a meeting. The browser uses `src/integrations/api/` to call those functions.
 
 **Environment Variables**:
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key  
-- `REDIS_URL` - Redis connection string (optional)
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
 
 ### Key Component Architecture
 
@@ -69,7 +58,7 @@ Schedula is a meeting scheduling application with a React frontend and Vercel se
 **Availability Management**:
 1. `AddAvailability.tsx` collects time slots
 2. `AvailabilityDisplay.tsx` shows consolidated view with overlap detection
-3. Data flows through TanStack Query for caching and optimistic updates
+3. The meeting view refreshes data through the API client after changes
 
 **Core Components**:
 - `CreateMeeting.tsx` - Hero landing page with meeting creation form
@@ -95,5 +84,5 @@ Tests automatically start development server on localhost:3000.
 - **Local storage** remembers participant names across sessions  
 - **Mobile-first responsive design** using Tailwind breakpoints
 - **UUID-based meeting IDs** for security and uniqueness
-- **Real-time availability visualization** with overlap detection
-- **Vercel deployment optimized** with edge functions and caching
+- **Availability visualization** with overlap detection
+- **Vercel Functions** serve the API routes

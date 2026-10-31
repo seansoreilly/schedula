@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Availability Management', () => {
-  let meetingUrl: string;
-
   test.beforeEach(async ({ page }) => {
     // Create a meeting first
     await page.goto('/');
@@ -12,7 +10,6 @@ test.describe('Availability Management', () => {
     
     // Wait for navigation and capture URL
     await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });
-    meetingUrl = page.url();
   });
 
   test('should add availability successfully', async ({ page }) => {
