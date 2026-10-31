@@ -66,7 +66,8 @@ test.describe('API Integration Tests', () => {
       };
     });
 
-    expect(response.status).toBe(200);
+    // Vercel answers 200 from the function; Vite's dev server answers preflights itself with 204.
+    expect([200, 204]).toContain(response.status);
     expect(response.headers['access-control-allow-origin']).toBe('*');
     expect(response.headers['access-control-allow-methods']).toBeTruthy();
   });
@@ -78,7 +79,7 @@ test.describe('API Integration Tests', () => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ id: 'test', title: 'Delayed Meeting', creator_name: 'Test' })
+        body: JSON.stringify({ id: '11111111-1111-4111-8111-111111111111', title: 'Delayed Meeting', creator_name: 'Test', created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' })
       });
     });
 
@@ -88,7 +89,7 @@ test.describe('API Integration Tests', () => {
     
     // Should show loading state
     await page.click('button:has-text("Create Meeting")');
-    await expect(page.locator('text=Creating, text=Loading')).toBeVisible();
+    await expect(page.getByText('Creating Meeting...')).toBeVisible();
 
     // Should eventually complete
     await page.waitForURL(/\/meeting\/.*/, { timeout: 10000 });
@@ -110,7 +111,7 @@ test.describe('API Integration Tests', () => {
         route.fulfill({
           status: 201,
           contentType: 'application/json',
-          body: JSON.stringify({ id: 'retry-test', title: 'Retry Meeting', creator_name: 'Retry User' })
+          body: JSON.stringify({ id: '22222222-2222-4222-8222-222222222222', title: 'Retry Meeting', creator_name: 'Retry User', created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' })
         });
       }
     });
@@ -121,7 +122,7 @@ test.describe('API Integration Tests', () => {
     await page.click('button:has-text("Create Meeting")');
 
     // Should show error first
-    await expect(page.locator('text=Error, text=Failed')).toBeVisible();
+    await expect(page.getByText('Failed to create meeting. Please try again.')).toBeVisible();
 
     // User clicks retry or tries again
     await page.click('button:has-text("Create Meeting")');
