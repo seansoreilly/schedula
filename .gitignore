@@ -128,3 +128,4 @@ local.json
 
 # bun
 # bun.lockbsupabase/.temp/
+supabase-local.env

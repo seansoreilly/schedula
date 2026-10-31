@@ -62,7 +62,10 @@ jobs:
       run: |
         supabase status -o env \
           | sed -n -e 's/^API_URL=/SUPABASE_URL=/p' -e 's/^ANON_KEY=/SUPABASE_ANON_KEY=/p' \
-          | tr -d '"' >> "$GITHUB_ENV"
+          | tr -d '"' > supabase-local.env
+        grep -q '^SUPABASE_URL=.' supabase-local.env
+        grep -q '^SUPABASE_ANON_KEY=.' supabase-local.env
+        cat supabase-local.env >> "$GITHUB_ENV"
 
     - name: Check the schedula schema is served
       run: |
