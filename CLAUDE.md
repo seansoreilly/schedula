@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Local Development
 - **Full application**: `npm run dev:full` (recommended) or `npm run dev:vercel`. Both run Vercel's local server on port 3000, serving the Vite app and `/api/*` functions together.
-- **Frontend-only Vite server**: `npm run dev`. It does not provide API functions.
+- **Frontend-only Vite server**: `npm run dev` (port 3000, proxies `/api/*` to :3001).
+- **Local API server**: `npm run dev:api` (`scripts/dev-api-server.ts`, port 3001). Mounts the `api/` handlers without Vercel. Never reads `.env`; needs `SUPABASE_URL`/`SUPABASE_ANON_KEY` and refuses non-local databases unless `SCHEDULA_ALLOW_REMOTE_DB=1`.
+- **Throwaway database**: `supabase start` (Docker) builds the `schedula` schema from `supabase/migrations/`; `supabase status -o env` gives the URL and anon key. `.env` points at production Supabase, so never run e2e with it.
 
 ### Build & Quality
 - **Typecheck**: `npm run typecheck` (or `npm run typecheck:app` / `npm run typecheck:api`)
@@ -17,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - **Unit tests**: `npm run test:unit`
-- **E2E tests**: `npm run test` or `npx playwright test`
+- **E2E tests**: `npm run test` or `npx playwright test`. Starts `dev:api` + `dev` itself; export `SUPABASE_URL`/`SUPABASE_ANON_KEY` from a local `supabase start` first. CI (`.github/workflows/e2e-tests.yml`) does the same against a throwaway stack.
 - **Test UI**: `npm run test:ui` or `npx playwright test --ui`
 - **Test headed**: `npm run test:headed` (visible browser)
 - **Test debug**: `npm run test:debug` (debug mode)
@@ -76,7 +78,7 @@ Playwright E2E tests in `/e2e/` directory covering:
 - Responsive design (`responsive-design.spec.ts`)
 - API integration (`api-integration.spec.ts`)
 
-Tests automatically start development server on localhost:3000.
+Playwright starts the API server (:3001) and Vite (:3000) itself. Unit tests (vitest) live in `src/**/*.test.ts` and `tests/` (API handlers with a mocked Supabase client, request validation, response parsers, availability logic).
 
 ## Important Development Notes
 
