@@ -11,13 +11,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 3000,
+    strictPort: true,
     historyApiFallback: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-    },
   },
   plugins: [
     react(),

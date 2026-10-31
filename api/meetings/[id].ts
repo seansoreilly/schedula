@@ -1,40 +1,26 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http';
+import { supabase } from '../_lib/supabase';
+import { isUuid, validateMeetingUpdate } from '../_lib/validation';
 
-// Supabase configuration
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ogdfhmnnhlmqwuhlikem.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseKey) {
-  throw new Error('Supabase anonymous key is required. Set VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY environment variable.');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  db: {
-    schema: 'schedula',
-  },
-});
-
-interface MeetingUpdate {
-  title?: string;
-  creator_name?: string;
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (prepareEndpoint(req, res, ['GET', 'PUT'])) {
     return;
   }
 
-  const { id } = req.query;
+  if (req.method !== 'GET' && req.method !== 'PUT') {
+    methodNotAllowed(res);
+    return;
+  }
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Meeting ID is required' });
+  const meetingId = req.query.id;
+  if (!isUuid(meetingId)) {
+    if (req.method === 'GET') {
+      res.status(404).json({ error: 'Meeting not found' });
+    } else {
+      res.status(400).json({ error: 'Meeting ID is required' });
+    }
+    return;
   }
 
   try {
@@ -42,59 +28,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: meeting, error } = await supabase
         .from('meetings')
         .select('*')
-        .eq('id', id)
+        .eq('id', meetingId)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
-          return res.status(404).json({ error: 'Meeting not found' });
+          res.status(404).json({ error: 'Meeting not found' });
+          return;
         }
-        console.error('Supabase error:', error);
-        return res.status(500).json({ 
-          error: 'Database error',
-          details: error.message
-        });
-      }
-      
-      res.status(200).json(meeting);
-    } else if (req.method === 'PUT') {
-      const { title, creator_name } = req.body as MeetingUpdate;
-      
-      if (!title && !creator_name) {
-        return res.status(400).json({ error: 'No fields to update' });
+
+        databaseError(res, error);
+        return;
       }
 
-      const updateData: Record<string, string> = { updated_at: new Date().toISOString() };
-      if (title) updateData.title = title;
-      if (creator_name) updateData.creator_name = creator_name;
+      res.status(200).json(meeting);
+      return;
+    }
+
+    if (req.method === 'PUT') {
+      const meetingUpdate = validateMeetingUpdate(req.body);
+      if (!meetingUpdate.ok) {
+        res.status(400).json({ error: 'No fields to update' });
+        return;
+      }
 
       const { data: meeting, error } = await supabase
         .from('meetings')
-        .update(updateData)
-        .eq('id', id)
+        .update({ ...meetingUpdate.value, updated_at: new Date().toISOString() })
+        .eq('id', meetingId)
         .select()
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
-          return res.status(404).json({ error: 'Meeting not found' });
+          res.status(404).json({ error: 'Meeting not found' });
+          return;
         }
-        console.error('Supabase error:', error);
-        return res.status(500).json({ 
-          error: 'Database error',
-          details: error.message
-        });
+
+        databaseError(res, error);
+        return;
       }
-      
+
       res.status(200).json(meeting);
-    } else {
-      res.status(405).json({ error: 'Method not allowed' });
+      return;
     }
+
   } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+    internalServerError(res, error);
   }
 }
