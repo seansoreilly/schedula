@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Share2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { track } from "@/lib/analytics";
 
 interface ShareMeetingProps {
   meetingId: string;
@@ -23,6 +24,7 @@ const ShareMeeting = ({
     try {
       await navigator.clipboard.writeText(meetingUrl);
       setCopied(true);
+      track("share", { method: "copy_link", content_type: "meeting" });
       toast({
         title: "Link Copied Successfully",
         description: "Meeting link has been copied to your clipboard.",
@@ -51,6 +53,7 @@ const ShareMeeting = ({
       if (navigator.canShare(shareData)) {
         try {
           await navigator.share(shareData);
+          track("share", { method: "web_share", content_type: "meeting" });
           return;
         } catch (error) {
           // User cancelled or share failed, fall back to copy
@@ -65,6 +68,7 @@ const ShareMeeting = ({
           text: `Share your availability for this meeting`,
           url: meetingUrl,
         });
+        track("share", { method: "web_share", content_type: "meeting" });
         return;
       } catch (error) {
         console.log("Share cancelled or failed:", error);
