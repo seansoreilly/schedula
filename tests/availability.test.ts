@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
+
+import type { Availability } from "../src/integrations/api/types";
 
 import {
   createTimeOptions,
   findCommonAvailabilitySlots,
   getAvailabilityDefaults,
-} from "../src/lib/availability.ts";
+} from "../src/lib/availability";
 
-function availability(overrides) {
+function availability(overrides: Partial<Availability>): Availability {
   return {
     id: crypto.randomUUID(),
     meeting_id: "11111111-1111-4111-8111-111111111111",
