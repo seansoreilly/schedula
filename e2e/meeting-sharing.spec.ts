@@ -15,29 +15,28 @@ test.describe('Meeting Sharing', () => {
   });
 
   test('should display shareable link', async ({ page }) => {
-    // Should show the meeting URL somewhere on the page
-    await expect(page.locator(`text=${meetingUrl}`)).toBeVisible();
+    // The meeting URL is shown in a read-only input
+    await expect(page.locator('input[readonly]')).toHaveValue(meetingUrl);
   });
 
-  test('should copy meeting link to clipboard', async ({ page, context }) => {
+  test('should copy meeting link to clipboard', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Clipboard permissions can only be granted in Chromium');
+
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Click copy button
-    await page.click('button:has-text("Copy"), button:has-text("Link")');
+    await page.getByTitle('Copy link').click();
 
     // Verify clipboard content
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toBe(meetingUrl);
 
     // Should show success feedback
-    await expect(page.locator('text=Copied, text=Link copied')).toBeVisible();
+    await expect(page.getByText('Link Copied Successfully').first()).toBeVisible();
   });
 
-  test('should allow direct URL access to meeting', async ({ page, browser }) => {
-    // Extract meeting ID from URL
-    const meetingId = meetingUrl.split('/meeting/')[1];
-
+  test('should allow direct URL access to meeting', async ({ browser }) => {
     // Open a new browser context (simulating different user)
     const newContext = await browser.newContext();
     const newPage = await newContext.newPage();
@@ -61,7 +60,7 @@ test.describe('Meeting Sharing', () => {
     await newPage.selectOption('select:near(:text("End Time"))', '12:00');
     await newPage.click('button:has-text("Add My Availability")');
 
-    await expect(newPage.locator('text=Success, text=Added')).toBeVisible();
+    await expect(newPage.getByText('Availability Added Successfully').first()).toBeVisible();
 
     await newContext.close();
   });
@@ -71,36 +70,38 @@ test.describe('Meeting Sharing', () => {
     await page.goto('/meeting/invalid-meeting-id');
 
     // Should show "not found" message
-    await expect(page.locator('text=Meeting Not Found, text=not found, text=not exist')).toBeVisible();
+    await expect(page.getByText('Meeting Not Found')).toBeVisible();
   });
 
   test('should edit meeting title', async ({ page }) => {
     // Find and click edit button for title
-    await page.hover('h1, h2, h3:has-text("Shareable Meeting")');
-    await page.click('button[aria-label*="edit"], button:has([class*="edit"])', { timeout: 5000 });
+    await page.getByRole('heading', { name: 'Shareable Meeting' }).hover();
+    await page.getByRole('button', { name: 'Edit meeting title' }).click();
 
     // Edit the title
-    const titleInput = page.locator('input[value="Shareable Meeting"]');
+    const titleInput = page.locator('input:focus');
+    await expect(titleInput).toHaveValue('Shareable Meeting');
     await titleInput.clear();
     await titleInput.fill('Updated Meeting Title');
 
     // Save the changes
-    await page.click('button:has([class*="check"]), button:has-text("Save")');
+    await page.getByRole('button', { name: 'Save meeting title' }).click();
 
     // Verify title updated
     await expect(page.locator('h1, h2, h3').filter({ hasText: 'Updated Meeting Title' })).toBeVisible();
 
     // Verify success message
-    await expect(page.locator('text=Updated, text=Success')).toBeVisible();
+    await expect(page.getByText('Meeting Title Updated').first()).toBeVisible();
   });
 
   test('should cancel title editing', async ({ page }) => {
     // Start editing
-    await page.hover('h1, h2, h3:has-text("Shareable Meeting")');
-    await page.click('button[aria-label*="edit"], button:has([class*="edit"])', { timeout: 5000 });
+    await page.getByRole('heading', { name: 'Shareable Meeting' }).hover();
+    await page.getByRole('button', { name: 'Edit meeting title' }).click();
 
     // Change title but cancel
-    const titleInput = page.locator('input[value="Shareable Meeting"]');
+    const titleInput = page.locator('input:focus');
+    await expect(titleInput).toHaveValue('Shareable Meeting');
     await titleInput.clear();
     await titleInput.fill('Cancelled Edit');
 
