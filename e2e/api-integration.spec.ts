@@ -51,25 +51,16 @@ test.describe('API Integration Tests', () => {
     expect(errorResponse.error).toContain('required');
   });
 
-  test('should handle CORS properly', async ({ page }) => {
-    // Navigate to the app first to establish origin
-    await page.goto('/');
-
-    // Make a cross-origin style request
-    const response = await page.evaluate(async () => {
-      const response = await fetch('/api/meetings', {
-        method: 'OPTIONS'
-      });
-      return {
-        status: response.status,
-        headers: Object.fromEntries(response.headers.entries())
-      };
+  test('should handle CORS properly', async ({ request }) => {
+    // Hit the API server directly: Vite's dev proxy answers preflights itself
+    // (204, echoed origin), whereas Vercel passes them to the handler.
+    const response = await request.fetch('http://127.0.0.1:3001/api/meetings', {
+      method: 'OPTIONS'
     });
 
-    // Vercel answers 200 from the function; Vite's dev server answers preflights itself with 204.
-    expect([200, 204]).toContain(response.status);
-    expect(response.headers['access-control-allow-origin']).toBe('*');
-    expect(response.headers['access-control-allow-methods']).toBeTruthy();
+    expect(response.status()).toBe(200);
+    expect(response.headers()['access-control-allow-origin']).toBe('*');
+    expect(response.headers()['access-control-allow-methods']).toBeTruthy();
   });
 
   test('should handle network timeouts gracefully', async ({ page }) => {
@@ -122,7 +113,7 @@ test.describe('API Integration Tests', () => {
     await page.click('button:has-text("Create Meeting")');
 
     // Should show error first
-    await expect(page.getByText('Failed to create meeting. Please try again.')).toBeVisible();
+    await expect(page.getByText('Failed to create meeting. Please try again.').first()).toBeVisible();
 
     // User clicks retry or tries again
     await page.click('button:has-text("Create Meeting")');
