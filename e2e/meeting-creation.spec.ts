@@ -25,7 +25,8 @@ test.describe('Meeting Creation Flow', () => {
     await expect(page.locator('text=Test Organizer')).toBeVisible();
 
     // Verify share functionality is present
-    await expect(page.locator('button:has-text("Copy Link"), button:has-text("Share")')).toBeVisible();
+    await expect(page.getByTitle('Copy link')).toBeVisible();
+    await expect(page.getByTitle('Share meeting')).toBeVisible();
 
     // Verify availability form is present
     await expect(page.locator('input[placeholder*="name"], input[type="text"]').first()).toBeVisible();
