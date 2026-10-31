@@ -3,7 +3,7 @@
  * so `vite` (port 3000) can proxy `/api/*` to it. Used by local development
  * and the Playwright suite; production still runs the handlers on Vercel.
  *
- * It never reads `.env` files. Pass SUPABASE_URL and SUPABASE_ANON_KEY
+ * It never reads `.env` files. Pass SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
  * explicitly; a non-local Supabase URL is refused unless
  * SCHEDULA_ALLOW_REMOTE_DB=1, so tests cannot write to production by accident.
  */
@@ -26,8 +26,8 @@ const routes: readonly Route[] = [
 
 function assertSafeDatabase(): void {
   const supabaseUrl = process.env.SUPABASE_URL;
-  if (!supabaseUrl || !process.env.SUPABASE_ANON_KEY) {
-    throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY must be set (see `supabase status -o env`).");
+  if (!supabaseUrl || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (see `supabase status -o env`).");
   }
 
   const { hostname } = new URL(supabaseUrl);

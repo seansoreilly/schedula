@@ -65,7 +65,7 @@ export default defineConfig({
   /*
    * Start the API (scripts/dev-api-server.ts on :3001) and the Vite front end
    * (:3000, proxies /api to :3001). The API needs SUPABASE_URL and
-   * SUPABASE_ANON_KEY for a local/throwaway Supabase stack (`supabase start`);
+   * SUPABASE_SERVICE_ROLE_KEY for a local/throwaway Supabase stack (`supabase start`);
    * it refuses non-local databases so the suite never writes to production.
    */
   webServer: [

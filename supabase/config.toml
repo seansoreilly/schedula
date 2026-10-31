@@ -30,7 +30,7 @@ enabled = false
 [realtime]
 enabled = false
 
-# Auth must run: `supabase status` only prints the anon key while it is up.
+# Auth must run: `supabase status` only prints the API keys while it is up.
 [auth]
 enabled = true
 

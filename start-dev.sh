@@ -55,11 +55,10 @@ fi
 # Preserve compatibility with existing Vercel projects while keeping new local
 # configuration server-only.
 SUPABASE_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
-SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-${VITE_SUPABASE_ANON_KEY:-}}"
-export SUPABASE_URL SUPABASE_ANON_KEY
+export SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY
 
 require_environment_variable SUPABASE_URL
-require_environment_variable SUPABASE_ANON_KEY
+require_environment_variable SUPABASE_SERVICE_ROLE_KEY
 
 vercel_binary="$project_root/node_modules/.bin/vercel"
 if [[ ! -x "$vercel_binary" ]]; then

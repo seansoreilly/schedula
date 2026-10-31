@@ -49,18 +49,15 @@ ALTER TABLE schedula.availability
 CREATE INDEX IF NOT EXISTS availability_meeting_date_time_idx
   ON schedula.availability (meeting_id, available_date, start_time);
 
--- Grant access permissions
-GRANT USAGE ON SCHEMA schedula TO anon, authenticated;
+-- Access model: only the server (service_role, via the API functions) touches
+-- these tables. anon/authenticated get no grants and no policies.
+GRANT USAGE ON SCHEMA schedula TO service_role;
+GRANT ALL ON schedula.meetings, schedula.availability TO service_role;
 REVOKE ALL ON schedula.meetings, schedula.availability FROM anon, authenticated;
-GRANT SELECT, INSERT, UPDATE ON schedula.meetings TO anon, authenticated;
-GRANT SELECT, INSERT ON schedula.availability TO anon, authenticated;
 
--- Enable RLS on tables (optional for security)
 ALTER TABLE schedula.meetings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE schedula.availability ENABLE ROW LEVEL SECURITY;
 
--- Create policies to allow public access (since no auth is required)
--- Scope public-by-link access to the roles used by the application.
 DROP POLICY IF EXISTS "Allow all operations on meetings" ON schedula.meetings;
 DROP POLICY IF EXISTS "Allow all operations on availability" ON schedula.availability;
 DROP POLICY IF EXISTS "Allow public meeting reads" ON schedula.meetings;
@@ -68,15 +65,3 @@ DROP POLICY IF EXISTS "Allow public meeting creation" ON schedula.meetings;
 DROP POLICY IF EXISTS "Allow public meeting updates" ON schedula.meetings;
 DROP POLICY IF EXISTS "Allow public availability reads" ON schedula.availability;
 DROP POLICY IF EXISTS "Allow public availability creation" ON schedula.availability;
-
-CREATE POLICY "Allow public meeting reads" ON schedula.meetings
-  FOR SELECT TO anon, authenticated USING (true);
-CREATE POLICY "Allow public meeting creation" ON schedula.meetings
-  FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Allow public meeting updates" ON schedula.meetings
-  FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow public availability reads" ON schedula.availability
-  FOR SELECT TO anon, authenticated USING (true);
-CREATE POLICY "Allow public availability creation" ON schedula.availability
-  FOR INSERT TO anon, authenticated WITH CHECK (true);
