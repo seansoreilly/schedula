@@ -62,17 +62,17 @@ jobs:
       run: |
         supabase status -o env | cut -d= -f1
         supabase status -o env \
-          | sed -n -e 's/^API_URL=/SUPABASE_URL=/p' -e 's/^ANON_KEY=/SUPABASE_ANON_KEY=/p' \
+          | sed -n -e 's/^API_URL=/SUPABASE_URL=/p' -e 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/p' \
           | tr -d '"' > supabase-local.env
         grep -q '^SUPABASE_URL=.' supabase-local.env
-        grep -q '^SUPABASE_ANON_KEY=.' supabase-local.env
+        grep -q '^SUPABASE_SERVICE_ROLE_KEY=.' supabase-local.env
         cat supabase-local.env >> "$GITHUB_ENV"
 
     - name: Check the schedula schema is served
       run: |
         curl --fail-with-body -sS "$SUPABASE_URL/rest/v1/meetings?select=id&limit=1" \
-          -H "apikey: $SUPABASE_ANON_KEY" \
-          -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+          -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+          -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
           -H "Accept-Profile: schedula"
 
     - name: Install Playwright Browsers

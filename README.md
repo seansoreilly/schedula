@@ -86,7 +86,7 @@ Add your environment variables:
 ```env
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key  # server-only secret
 ```
 
 ### **4. Database Setup**
@@ -95,7 +95,7 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 
 1. Create a new project at [Supabase](https://supabase.com/)
 2. Navigate to the SQL Editor in your dashboard
-3. Run [`supabase-schema.sql`](./supabase-schema.sql) in the Supabase SQL Editor. It creates the `schedula` schema, the `meetings` and `availability` tables, and the public-access RLS policies used by the API functions.
+3. Run [`supabase-schema.sql`](./supabase-schema.sql) in the Supabase SQL Editor. It creates the `schedula` schema, the `meetings` and `availability` tables, and RLS. The anon role has no table access; the API functions use the service-role key.
 
 ### **5. Start Development Server**
 
@@ -141,7 +141,7 @@ npm test             # Run Playwright tests (starts API + Vite; local Supabase o
 3. **Environment Variables**
 
    - Add all environment variables from your `.env` file
-   - Ensure `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set. The API functions use them to access the `schedula` schema.
+   - Ensure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set. The API functions use them to access the `schedula` schema.
 
 4. **Deploy**
    - Vercel will automatically deploy on every push to your main branch
