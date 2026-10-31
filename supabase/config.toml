@@ -30,8 +30,7 @@ enabled = false
 [realtime]
 enabled = false
 
-# Auth stays enabled so `supabase status` prints the anon key; CI still skips
-# the gotrue container with `supabase start -x gotrue`.
+# Auth must run: `supabase status` only prints the anon key while it is up.
 [auth]
 enabled = true
 
