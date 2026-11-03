@@ -96,6 +96,24 @@ const App = () => (
                 <p className="text-sm text-slate-400">
                   Easy multi-use scheduling platform.
                 </p>
+                <p className="text-xs text-slate-400 mt-2">
+                  Built by{" "}
+                  <a
+                    href="https://stepthrough.au/"
+                    target="_blank"
+                    rel="noopener"
+                    className="underline hover:text-white"
+                  >
+                    Stepthrough
+                  </a>{" "}
+                  ·{" "}
+                  <a
+                    href="mailto:contact@stepthrough.au"
+                    className="underline hover:text-white"
+                  >
+                    contact@stepthrough.au
+                  </a>
+                </p>
               </div>
             </div>
           </footer>
