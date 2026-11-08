@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 interface QueryResult {
   data: unknown;
+  count?: number | null;
   error: { code?: string; message: string } | null;
 }
 
@@ -15,14 +16,16 @@ const supabaseMock = vi.hoisted(() => {
   const state = {
     queries: [] as RecordedQuery[],
     result: { data: null, error: null } as QueryResult,
+    queue: [] as QueryResult[],
   };
 
   function from(table: string): unknown {
     const query: RecordedQuery = { table, calls: [] };
     state.queries.push(query);
 
+    const result = state.queue.shift() ?? state.result;
     const builder: Record<string, unknown> = {
-      then: (resolve: (value: QueryResult) => unknown) => resolve(state.result),
+      then: (resolve: (value: QueryResult) => unknown) => resolve(result),
     };
     for (const method of ["insert", "update", "select", "eq", "order", "single"]) {
       builder[method] = (...args: unknown[]) => {
@@ -38,6 +41,7 @@ const supabaseMock = vi.hoisted(() => {
 
 vi.mock("../../api/_lib/supabase", () => ({ supabase: supabaseMock.supabase }));
 
+const { resetRateLimitForTests } = await import("../../api/_lib/rateLimit");
 const { default: meetingsHandler } = await import("../../api/meetings/index");
 const { default: meetingByIdHandler } = await import("../../api/meetings/[id]");
 const { default: availabilityHandler } = await import("../../api/availability/index");
@@ -52,7 +56,7 @@ interface CapturedResponse {
 
 function invoke(
   handler: (req: VercelRequest, res: VercelResponse) => Promise<void>,
-  request: { method: string; body?: unknown; query?: Record<string, string> },
+  request: { method: string; body?: unknown; query?: Record<string, string>; headers?: Record<string, string> },
 ): Promise<CapturedResponse> {
   const captured: CapturedResponse = { statusCode: 200, body: undefined, headers: {} };
   const res = {
@@ -80,6 +84,8 @@ function invoke(
 beforeEach(() => {
   supabaseMock.state.queries = [];
   supabaseMock.state.result = { data: null, error: null };
+  supabaseMock.state.queue = [];
+  resetRateLimitForTests();
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
@@ -122,6 +128,22 @@ describe("POST /api/meetings", () => {
 
     expect(response.statusCode).toBe(500);
     expect(response.body).toEqual({ error: "Database error" });
+  });
+
+  test("rate limits POSTs per IP with 429", async () => {
+    supabaseMock.state.result = { data: { id: meetingId }, error: null };
+    const request = {
+      method: "POST",
+      body: { title: "Planning", creator_name: "Sean" },
+      headers: { "x-forwarded-for": "198.51.100.7" },
+    };
+
+    for (let i = 0; i < 20; i++) {
+      expect((await invoke(meetingsHandler, request)).statusCode).toBe(201);
+    }
+    const blocked = await invoke(meetingsHandler, request);
+    expect(blocked.statusCode).toBe(429);
+    expect(supabaseMock.state.queries).toHaveLength(20);
   });
 
   test("answers CORS preflight and rejects other methods", async () => {
@@ -191,10 +213,11 @@ describe("/api/availability", () => {
     const response = await invoke(availabilityHandler, { method: "POST", body: validAvailability });
 
     expect(response.statusCode).toBe(201);
-    expect(supabaseMock.state.queries[0].calls[0]).toEqual(["insert", [validAvailability]]);
+    expect(supabaseMock.state.queries[1].calls[0]).toEqual(["insert", [validAvailability]]);
   });
 
   test("returns 404 when the meeting does not exist (foreign key violation)", async () => {
+    supabaseMock.state.queue = [{ data: null, count: 0, error: null }];
     supabaseMock.state.result = {
       data: null,
       error: { code: "23503", message: 'violates foreign key constraint "availability_meeting_id_fkey"' },
@@ -204,6 +227,44 @@ describe("/api/availability", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.body).toEqual({ error: "Meeting not found" });
+  });
+
+  test("counts existing rows for the meeting before inserting", async () => {
+    supabaseMock.state.queue = [{ data: null, count: 199, error: null }];
+    supabaseMock.state.result = { data: { id: "a", ...validAvailability }, error: null };
+
+    const response = await invoke(availabilityHandler, { method: "POST", body: validAvailability });
+
+    expect(response.statusCode).toBe(201);
+    expect(supabaseMock.state.queries[0].calls).toEqual([
+      ["select", ["*", { count: "exact", head: true }]],
+      ["eq", ["meeting_id", meetingId]],
+    ]);
+  });
+
+  test("returns 409 and does not insert once a meeting has 200 rows", async () => {
+    supabaseMock.state.queue = [{ data: null, count: 200, error: null }];
+
+    const response = await invoke(availabilityHandler, { method: "POST", body: validAvailability });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.body).toEqual({ error: "This meeting has reached its availability limit" });
+    expect(supabaseMock.state.queries).toHaveLength(1);
+  });
+
+  test("rate limits POSTs per IP with 429 and Retry-After", async () => {
+    supabaseMock.state.result = { data: { id: "a" }, error: null };
+    const request = { method: "POST", body: validAvailability, headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } };
+
+    for (let i = 0; i < 20; i++) {
+      expect((await invoke(availabilityHandler, request)).statusCode).toBe(201);
+    }
+    const blocked = await invoke(availabilityHandler, request);
+    expect(blocked.statusCode).toBe(429);
+    expect(blocked.headers["retry-after"]).toBe("60");
+
+    const other = await invoke(availabilityHandler, { ...request, headers: { "x-forwarded-for": "203.0.113.10" } });
+    expect(other.statusCode).toBe(201);
   });
 
   test("rejects a reversed time range", async () => {
