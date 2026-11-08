@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getOwnerToken } from "@/lib/ownerToken";
 import { meetingQueries, availabilityQueries } from "@/integrations/api/queries";
 import { useToast } from "@/hooks/use-toast";
 import { classifyError, track } from "@/lib/analytics";
@@ -98,14 +99,16 @@ const MeetingView = () => {
     };
   }, [meetingId, reloadCount, toast]);
 
+  const ownerToken = meetingId ? getOwnerToken(meetingId) : null;
+
   const handleTitleUpdate = async () => {
-    if (!meeting || !editedTitle.trim() || isSavingTitle) return;
+    if (!meeting || !ownerToken || !editedTitle.trim() || isSavingTitle) return;
 
     setIsSavingTitle(true);
     try {
       const updatedMeeting = await meetingQueries.update(meeting.id, {
         title: editedTitle.trim(),
-      });
+      }, ownerToken);
 
       if (!updatedMeeting) {
         setMeeting(null);
@@ -260,6 +263,7 @@ const MeetingView = () => {
                     <h1 className="text-3xl lg:text-4xl font-bold">
                       {meeting.title}
                     </h1>
+                    {ownerToken && (
                     <Button
                       onClick={() => setIsEditingTitle(true)}
                       size="sm"
@@ -269,7 +273,14 @@ const MeetingView = () => {
                     >
                       <Edit3 className="h-5 w-5" />
                     </Button>
+                    )}
                   </div>
+
+                  {!ownerToken && (
+                    <p className="mt-1 text-sm text-white/70">
+                      Only the organizer can edit this meeting, from the browser that created it.
+                    </p>
+                  )}
 
                   <div className="flex items-center gap-6 mt-4 text-white/90">
                     <div className="flex items-center gap-2">

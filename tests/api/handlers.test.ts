@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 interface QueryResult {
@@ -100,15 +101,29 @@ describe("POST /api/meetings", () => {
     });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body).toEqual(meeting);
+    const body = response.body as Record<string, unknown>;
+    const ownerToken = body.owner_token as string;
+    expect(ownerToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(body).toEqual({ ...meeting, owner_token: ownerToken });
+    expect(body).not.toHaveProperty("owner_token_hash");
     expect(supabaseMock.state.queries[0]).toEqual({
       table: "meetings",
       calls: [
-        ["insert", [{ title: "Planning", creator_name: "Sean" }]],
-        ["select", []],
+        [
+          "insert",
+          [{ title: "Planning", creator_name: "Sean", owner_token_hash: createHash("sha256").update(ownerToken).digest("hex") }],
+        ],
+        ["select", ["id,title,creator_name,created_at,updated_at"]],
         ["single", []],
       ],
     });
+  });
+
+  test("generates a distinct token per meeting", async () => {
+    supabaseMock.state.result = { data: { id: meetingId }, error: null };
+    const first = (await invoke(meetingsHandler, { method: "POST", body: { title: "A", creator_name: "S" } })).body as { owner_token: string };
+    const second = (await invoke(meetingsHandler, { method: "POST", body: { title: "A", creator_name: "S" } })).body as { owner_token: string };
+    expect(first.owner_token).not.toBe(second.owner_token);
   });
 
   test("rejects invalid input without touching the database", async () => {
@@ -215,21 +230,93 @@ describe("/api/meetings/[id]", () => {
     expect(supabaseMock.state.queries[0].calls).toContainEqual(["eq", ["id", meetingId]]);
   });
 
-  test("updates only validated fields and stamps updated_at", async () => {
+  const ownerToken = "owner-token-for-tests";
+  const ownerHash = createHash("sha256").update(ownerToken).digest("hex");
+  const lookupOwned = { data: { owner_token_hash: ownerHash }, error: null };
+
+  test("updates only validated fields and stamps updated_at with a valid owner token", async () => {
+    supabaseMock.state.queue = [lookupOwned];
     supabaseMock.state.result = { data: { id: meetingId, title: "New" }, error: null };
 
     const response = await invoke(meetingByIdHandler, {
       method: "PUT",
       query: { id: meetingId },
       body: { title: " New " },
+      headers: { authorization: `Bearer ${ownerToken}` },
     });
 
     expect(response.statusCode).toBe(200);
-    const [method, [update]] = supabaseMock.state.queries[0].calls[0] as [string, [Record<string, unknown>]];
+    expect(supabaseMock.state.queries[0].calls).toContainEqual(["select", ["owner_token_hash"]]);
+    const [method, [update]] = supabaseMock.state.queries[1].calls[0] as [string, [Record<string, unknown>]];
     expect(method).toBe("update");
     expect(update).toMatchObject({ title: "New" });
     expect(typeof update.updated_at).toBe("string");
     expect(update).not.toHaveProperty("creator_name");
+    expect(supabaseMock.state.queries[1].calls).toContainEqual(["select", ["id,title,creator_name,created_at,updated_at"]]);
+  });
+
+  test("accepts the X-Owner-Token header", async () => {
+    supabaseMock.state.queue = [lookupOwned];
+    supabaseMock.state.result = { data: { id: meetingId }, error: null };
+
+    const response = await invoke(meetingByIdHandler, {
+      method: "PUT",
+      query: { id: meetingId },
+      body: { title: "New" },
+      headers: { "x-owner-token": ownerToken },
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  test("returns 403 and does not update with a missing or wrong owner token", async () => {
+    for (const headers of [{} as Record<string, string>, { authorization: "Bearer wrong" }, { "x-owner-token": "wrong" }, { authorization: "Basic abc" }]) {
+      supabaseMock.state.queries = [];
+      supabaseMock.state.queue = [lookupOwned];
+      const response = await invoke(meetingByIdHandler, {
+        method: "PUT",
+        query: { id: meetingId },
+        body: { title: "Hijacked" },
+        headers,
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(supabaseMock.state.queries).toHaveLength(1);
+    }
+  });
+
+  test("allows editing a legacy meeting with a NULL hash and logs it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    supabaseMock.state.queue = [{ data: { owner_token_hash: null }, error: null }];
+    supabaseMock.state.result = { data: { id: meetingId, title: "New" }, error: null };
+
+    const response = await invoke(meetingByIdHandler, { method: "PUT", query: { id: meetingId }, body: { title: "New" } });
+
+    expect(response.statusCode).toBe(200);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  test("returns 404 on PUT for an unknown meeting", async () => {
+    supabaseMock.state.result = { data: null, error: { code: "PGRST116", message: "0 rows" } };
+
+    const response = await invoke(meetingByIdHandler, {
+      method: "PUT",
+      query: { id: meetingId },
+      body: { title: "New" },
+      headers: { authorization: `Bearer ${ownerToken}` },
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+
+  test("GET selects only public columns, never the token hash", async () => {
+    supabaseMock.state.result = { data: { id: meetingId, title: "T" }, error: null };
+
+    await invoke(meetingByIdHandler, { method: "GET", query: { id: meetingId } });
+
+    const select = supabaseMock.state.queries[0].calls.find(([m]) => m === "select");
+    expect(select?.[1]).toEqual(["id,title,creator_name,created_at,updated_at"]);
+    expect(JSON.stringify(select)).not.toContain("owner_token_hash");
   });
 
   test("rejects an empty update", async () => {

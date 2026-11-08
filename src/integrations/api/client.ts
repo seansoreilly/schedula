@@ -90,9 +90,14 @@ export const apiClient = {
     });
   },
 
-  async put<T>(endpoint: string, data: unknown): Promise<T> {
+  async put<T>(
+    endpoint: string,
+    data: unknown,
+    headers?: Record<string, string>
+  ): Promise<T> {
     return request<T>(endpoint, {
       method: "PUT",
+      headers,
       body: JSON.stringify(data),
     });
   },

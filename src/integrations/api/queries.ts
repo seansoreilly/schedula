@@ -3,6 +3,7 @@ import type {
   Availability,
   AvailabilityInsert,
   Meeting,
+  MeetingCreated,
   MeetingInsert,
   MeetingUpdate,
 } from "./types";
@@ -10,11 +11,12 @@ import {
   parseAvailability,
   parseAvailabilityList,
   parseMeeting,
+  parseMeetingCreated,
 } from "./types";
 
 export const meetingQueries = {
-  async create(data: MeetingInsert): Promise<Meeting> {
-    return parseMeeting(await apiClient.post<unknown>("/meetings", data));
+  async create(data: MeetingInsert): Promise<MeetingCreated> {
+    return parseMeetingCreated(await apiClient.post<unknown>("/meetings", data));
   },
 
   async findById(id: string): Promise<Meeting | null> {
@@ -30,12 +32,17 @@ export const meetingQueries = {
     }
   },
 
-  async update(id: string, data: MeetingUpdate): Promise<Meeting | null> {
+  async update(
+    id: string,
+    data: MeetingUpdate,
+    ownerToken: string
+  ): Promise<Meeting | null> {
     try {
       return parseMeeting(
         await apiClient.put<unknown>(
           `/meetings/${encodeURIComponent(id)}`,
-          data
+          data,
+          { Authorization: `Bearer ${ownerToken}` }
         )
       );
     } catch (error) {

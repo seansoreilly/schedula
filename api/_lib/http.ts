@@ -32,7 +32,7 @@ export function prepareEndpoint(
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', allowedMethods);
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Owner-Token');
   res.setHeader('Allow', allowedMethods);
 
   if (req.method === 'OPTIONS') {
