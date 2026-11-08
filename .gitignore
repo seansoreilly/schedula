@@ -127,5 +127,10 @@ local.json
 # pnpm-lock.yaml
 
 # bun
-# bun.lockbsupabase/.temp/
+# bun.lockb
+
+# Local tooling
+supabase/.temp/
 supabase-local.env
+.claude/worktrees/
+.Codex/
