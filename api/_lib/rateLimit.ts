@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const WINDOW_MS = 60_000;
-const MAX_REQUESTS_PER_WINDOW = 20;
+// Overridable only so the local e2e suite (one IP, many POSTs) is not throttled;
+// production leaves it unset and gets the default.
+const configuredMax = Number.parseInt(process.env.RATE_LIMIT_MAX_PER_MINUTE ?? '', 10);
+const MAX_REQUESTS_PER_WINDOW = Number.isInteger(configuredMax) && configuredMax > 0 ? configuredMax : 20;
 const MAX_TRACKED_KEYS = 5_000;
 
 // Best-effort abuse brake only. State lives in this module's memory, so it is
