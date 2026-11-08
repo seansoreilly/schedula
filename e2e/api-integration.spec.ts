@@ -54,13 +54,27 @@ test.describe('API Integration Tests', () => {
   test('should handle CORS properly', async ({ request }) => {
     // Hit the API server directly: Vite's dev proxy answers preflights itself
     // (204, echoed origin), whereas Vercel passes them to the handler.
-    const response = await request.fetch('http://127.0.0.1:3001/api/meetings', {
-      method: 'OPTIONS'
-    });
+    const url = 'http://127.0.0.1:3001/api/meetings';
 
-    expect(response.status()).toBe(200);
-    expect(response.headers()['access-control-allow-origin']).toBe('*');
-    expect(response.headers()['access-control-allow-methods']).toBeTruthy();
+    // No Origin (same-origin / non-browser): never wildcard.
+    const plain = await request.fetch(url, { method: 'OPTIONS' });
+    expect(plain.status()).toBe(200);
+    expect(plain.headers()['access-control-allow-origin']).toBeUndefined();
+    expect(plain.headers()['access-control-allow-methods']).toBeTruthy();
+
+    // Allowlisted origin is echoed.
+    const allowed = await request.fetch(url, {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://www.schedula.xyz' }
+    });
+    expect(allowed.headers()['access-control-allow-origin']).toBe('https://www.schedula.xyz');
+
+    // Foreign origin is not echoed.
+    const evil = await request.fetch(url, {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://evil.example' }
+    });
+    expect(evil.headers()['access-control-allow-origin']).toBeUndefined();
   });
 
   test('should handle network timeouts gracefully', async ({ page }) => {

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http.js';
+import { rejectIfRateLimited } from '../_lib/rateLimit.js';
 import { supabase } from '../_lib/supabase.js';
 import { validateMeetingCreate } from '../_lib/validation.js';
 
@@ -10,6 +11,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (req.method !== 'POST') {
     methodNotAllowed(res);
+    return;
+  }
+
+  if (rejectIfRateLimited(req, res)) {
     return;
   }
 
