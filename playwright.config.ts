@@ -71,6 +71,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run dev:api',
+      env: { RATE_LIMIT_MAX_PER_MINUTE: '100000' },
       url: 'http://127.0.0.1:3001/api/availability',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
