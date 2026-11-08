@@ -6,6 +6,10 @@ export interface Meeting {
   updated_at: string;
 }
 
+export interface MeetingCreated extends Meeting {
+  owner_token: string;
+}
+
 export interface MeetingInsert {
   title: string;
   creator_name: string;
@@ -40,6 +44,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasString(value: Record<string, unknown>, key: string): boolean {
   return typeof value[key] === "string";
+}
+
+export function parseMeetingCreated(value: unknown): MeetingCreated {
+  const meeting = parseMeeting(value);
+  const ownerToken = (value as Record<string, unknown>).owner_token;
+  if (typeof ownerToken !== "string" || ownerToken.length === 0) {
+    throw new Error("The meetings API returned an invalid response");
+  }
+  return { ...meeting, owner_token: ownerToken };
 }
 
 export function parseMeeting(value: unknown): Meeting {

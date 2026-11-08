@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http.js';
 import { rejectIfRateLimited } from '../_lib/rateLimit.js';
+import { MEETING_PUBLIC_COLUMNS, generateOwnerToken, hashOwnerToken } from '../_lib/ownerToken.js';
 import { supabase } from '../_lib/supabase.js';
 import { validateMeetingCreate } from '../_lib/validation.js';
 
@@ -25,10 +26,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
+    const ownerToken = generateOwnerToken();
     const { data: meeting, error } = await supabase
       .from('meetings')
-      .insert(meetingInput.value)
-      .select()
+      .insert({ ...meetingInput.value, owner_token_hash: hashOwnerToken(ownerToken) })
+      .select(MEETING_PUBLIC_COLUMNS)
       .single();
 
     if (error) {
@@ -36,7 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    res.status(201).json(meeting);
+    // The plaintext token is returned exactly once and never stored.
+    res.status(201).json({ ...meeting, owner_token: ownerToken });
   } catch (error) {
     internalServerError(res, error);
   }

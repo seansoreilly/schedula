@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { databaseError, internalServerError, methodNotAllowed, prepareEndpoint } from '../_lib/http.js';
+import { MEETING_PUBLIC_COLUMNS, ownerTokenMatches, readOwnerToken } from '../_lib/ownerToken.js';
 import { supabase } from '../_lib/supabase.js';
 import { isUuid, validateMeetingUpdate } from '../_lib/validation.js';
 
@@ -27,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (req.method === 'GET') {
       const { data: meeting, error } = await supabase
         .from('meetings')
-        .select('*')
+        .select(MEETING_PUBLIC_COLUMNS)
         .eq('id', meetingId)
         .single();
 
@@ -52,11 +53,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
+      const { data: existing, error: lookupError } = await supabase
+        .from('meetings')
+        .select('owner_token_hash')
+        .eq('id', meetingId)
+        .single();
+
+      if (lookupError) {
+        if (lookupError.code === 'PGRST116') {
+          res.status(404).json({ error: 'Meeting not found' });
+          return;
+        }
+
+        databaseError(res, lookupError);
+        return;
+      }
+
+      const storedHash: unknown = existing?.owner_token_hash;
+      if (typeof storedHash === 'string') {
+        const presentedToken = readOwnerToken(req);
+        if (presentedToken === null || !ownerTokenMatches(presentedToken, storedHash)) {
+          res.status(403).json({ error: 'Invalid or missing owner token' });
+          return;
+        }
+      } else {
+        // Legacy meeting created before owner tokens: stays editable by anyone
+        // with the link so existing links keep working. Logged for visibility.
+        console.warn('Legacy meeting without owner token edited', { meetingId });
+      }
+
       const { data: meeting, error } = await supabase
         .from('meetings')
         .update({ ...meetingUpdate.value, updated_at: new Date().toISOString() })
         .eq('id', meetingId)
-        .select()
+        .select(MEETING_PUBLIC_COLUMNS)
         .single();
 
       if (error) {

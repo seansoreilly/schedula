@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { meetingQueries } from "@/integrations/api/queries";
+import { saveOwnerToken } from "@/lib/ownerToken";
 import { useToast } from "@/hooks/use-toast";
 import { classifyError, track } from "@/lib/analytics";
 import {
@@ -44,6 +45,8 @@ const CreateMeeting = () => {
         title: title.trim(),
         creator_name: creatorName.trim(),
       });
+
+      saveOwnerToken(data.id, data.owner_token);
 
       track("meeting_created", {});
 
