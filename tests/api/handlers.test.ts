@@ -194,6 +194,18 @@ describe("/api/availability", () => {
     expect(supabaseMock.state.queries[0].calls[0]).toEqual(["insert", [validAvailability]]);
   });
 
+  test("returns 404 when the meeting does not exist (foreign key violation)", async () => {
+    supabaseMock.state.result = {
+      data: null,
+      error: { code: "23503", message: 'violates foreign key constraint "availability_meeting_id_fkey"' },
+    };
+
+    const response = await invoke(availabilityHandler, { method: "POST", body: validAvailability });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toEqual({ error: "Meeting not found" });
+  });
+
   test("rejects a reversed time range", async () => {
     const response = await invoke(availabilityHandler, {
       method: "POST",

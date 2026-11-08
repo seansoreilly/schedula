@@ -23,6 +23,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         .single();
 
       if (error) {
+        // 23503 = foreign_key_violation: meeting_id does not reference an existing meeting.
+        if (error.code === '23503') {
+          res.status(404).json({ error: 'Meeting not found' });
+          return;
+        }
+
         databaseError(res, error);
         return;
       }
