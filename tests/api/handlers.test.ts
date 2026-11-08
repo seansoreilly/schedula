@@ -156,6 +156,48 @@ describe("POST /api/meetings", () => {
   });
 });
 
+describe("CORS origin allowlist", () => {
+  const originHeader = (origin: string) => ({ method: "OPTIONS", headers: { origin } });
+
+  test("echoes production and own-preview origins with Vary: Origin, keeping OPTIONS handling", async () => {
+    for (const origin of [
+      "https://www.schedula.xyz",
+      "https://schedula.xyz",
+      "https://schedula-abc123xyz-melbourne-computing.vercel.app",
+      "https://schedula-git-security-weekly-melbourne-computing.vercel.app",
+    ]) {
+      const res = await invoke(meetingsHandler, originHeader(origin));
+      expect(res.statusCode).toBe(200);
+      expect(res.headers["access-control-allow-origin"]).toBe(origin);
+      expect(res.headers.vary).toBe("Origin");
+    }
+  });
+
+  test("omits allow-origin for foreign and look-alike origins, never '*'", async () => {
+    for (const origin of [
+      "https://evil.example",
+      "https://evil.vercel.app",
+      "https://other-abc-melbourne-computing.vercel.app",
+      "https://schedula-abc-other-team.vercel.app",
+      "https://schedula-abc-melbourne-computing.vercel.app.evil.com",
+      "http://schedula-abc-melbourne-computing.vercel.app",
+      "https://schedula.xyz.evil.com",
+      "https://evil-schedula.xyz",
+    ]) {
+      const res = await invoke(meetingsHandler, originHeader(origin));
+      expect(res.statusCode).toBe(200);
+      expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+      expect(res.headers.vary).toBe("Origin");
+    }
+  });
+
+  test("sets no allow-origin for requests without an Origin header", async () => {
+    const res = await invoke(meetingsHandler, { method: "OPTIONS" });
+    expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+    expect(res.headers.vary).toBe("Origin");
+  });
+});
+
 describe("/api/meetings/[id]", () => {
   test("returns 404 for a non-UUID id without querying", async () => {
     const response = await invoke(meetingByIdHandler, { method: "GET", query: { id: "nope" } });
