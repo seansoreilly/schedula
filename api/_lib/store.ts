@@ -22,7 +22,10 @@ export type AddAvailabilityResult =
  * results; anything unexpected (a database outage, say) is thrown and surfaces as a 500 in the routes.
  */
 export interface MeetingStore {
-  createMeeting(draft: MeetingDraft): Promise<Meeting>;
+  /** `ownerTokenHash` is the SHA-256 hex of the owner token; the hash is never part of a returned Meeting. */
+  createMeeting(draft: MeetingDraft, ownerTokenHash?: string): Promise<Meeting>;
+  /** The stored owner-token hash; `null` for legacy meetings created before owner tokens. */
+  getOwnerTokenHash(id: string): Promise<StoreResult<string | null>>;
   getMeeting(id: string): Promise<StoreResult<Meeting>>;
   updateMeeting(id: string, patch: MeetingPatch): Promise<StoreResult<Meeting>>;
   /** Ordered by date, then start time. `not-found` when the meeting does not exist. */

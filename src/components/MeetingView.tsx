@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getOwnerToken } from "@/lib/ownerToken";
 import { useToast } from "@/hooks/use-toast";
 import { useMeetingPage } from "@/hooks/use-meeting-page";
 import AddAvailability from "./AddAvailability";
@@ -26,6 +27,7 @@ const MeetingView = () => {
   const [editedTitle, setEditedTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const { toast } = useToast();
+  const canEdit = meetingId ? getOwnerToken(meetingId) !== null : false;
   const participantCount = new Set(
     availability.map((entry) => entry.participant_name)
   ).size;
@@ -195,6 +197,7 @@ const MeetingView = () => {
                     <h1 className="text-3xl lg:text-4xl font-bold">
                       {meeting.title}
                     </h1>
+                    {canEdit && (
                     <Button
                       onClick={handleStartEdit}
                       size="sm"
@@ -204,7 +207,14 @@ const MeetingView = () => {
                     >
                       <Edit3 className="h-5 w-5" />
                     </Button>
+                    )}
                   </div>
+
+                  {!canEdit && (
+                    <p className="mt-1 text-sm text-white/70">
+                      Only the organizer can edit this meeting, from the browser that created it.
+                    </p>
+                  )}
 
                   <div className="flex items-center gap-6 mt-4 text-white/90">
                     <div className="flex items-center gap-2">

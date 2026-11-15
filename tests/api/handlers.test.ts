@@ -4,6 +4,7 @@ import type { AvailabilityDraft } from "../../shared/contract";
 import { createAvailabilityHandler } from "../../api/_lib/availability-route";
 import { createMeetingHandler } from "../../api/_lib/meeting-route";
 import { createMeetingsHandler } from "../../api/_lib/meetings-route";
+import { hashOwnerToken } from "../../api/_lib/ownerToken";
 import { createMemoryStore } from "../../api/_lib/memory-store";
 import { resetRateLimitForTests } from "../../api/_lib/rateLimit";
 import { MAX_AVAILABILITY_ROWS_PER_MEETING } from "../../api/_lib/store";
@@ -75,6 +76,7 @@ function throwingStore(): MeetingStore {
   };
   return {
     createMeeting: fail,
+    getOwnerTokenHash: fail,
     getMeeting: fail,
     updateMeeting: fail,
     listAvailability: fail,
@@ -397,6 +399,61 @@ describe("/api/meetings/[id]", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.body).toEqual({ error: "Meeting not found" });
+  });
+
+  test("POST /api/meetings returns the owner token once and stores only its hash", async () => {
+    const response = await invoke(createMeetingsHandler(store), {
+      method: "POST",
+      body: { title: "Planning", creator_name: "Sean" },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const created = response.body as { id: string; owner_token: string };
+    expect(created.owner_token.length).toBeGreaterThanOrEqual(40);
+    const stored = await store.getOwnerTokenHash(created.id);
+    expect(stored).toEqual({ kind: "ok", value: hashOwnerToken(created.owner_token) });
+
+    const fetched = await invoke(createMeetingHandler(store), { method: "GET", query: { id: created.id } });
+    expect(JSON.stringify(fetched.body)).not.toContain(created.owner_token);
+    expect(fetched.body).not.toHaveProperty("owner_token");
+  });
+
+  describe("PUT owner token", () => {
+    const token = "test-owner-token-not-a-real-secret";
+    let id: string;
+
+    beforeEach(async () => {
+      id = (await store.createMeeting({ title: "Planning", creator_name: "Sean" }, hashOwnerToken(token))).id;
+    });
+
+    function put(headers?: Record<string, string>) {
+      return invoke(createMeetingHandler(store), { method: "PUT", query: { id }, body: { title: "Changed" }, headers });
+    }
+
+    test("accepts Authorization: Bearer and X-Owner-Token", async () => {
+      expect((await put({ authorization: `Bearer ${token}` })).statusCode).toBe(200);
+      expect((await put({ "x-owner-token": token })).statusCode).toBe(200);
+    });
+
+    test("rejects missing, wrong and non-Bearer tokens with 403 and changes nothing", async () => {
+      const spy = vi.spyOn(store, "updateMeeting");
+      expect((await put()).statusCode).toBe(403);
+      expect((await put({ authorization: "Bearer wrong" })).statusCode).toBe(403);
+      expect((await put({ authorization: `Basic ${token}` })).statusCode).toBe(403);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    test("legacy meetings without a token stay editable and are logged", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const legacyId = await seedMeeting();
+      const response = await invoke(createMeetingHandler(store), {
+        method: "PUT",
+        query: { id: legacyId },
+        body: { title: "Changed" },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(warn).toHaveBeenCalled();
+    });
   });
 
   test("PUT rejects an empty update with 400", async () => {

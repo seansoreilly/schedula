@@ -94,6 +94,18 @@ test.describe('Meeting Sharing', () => {
     await expect(page.getByText('Meeting Title Updated').first()).toBeVisible();
   });
 
+  test('should not offer title editing to someone without the owner token', async ({ browser }) => {
+    const otherContext = await browser.newContext();
+    const otherPage = await otherContext.newPage();
+    await otherPage.goto(meetingUrl);
+
+    await expect(otherPage.locator('h1').filter({ hasText: 'Shareable Meeting' })).toBeVisible();
+    await expect(otherPage.getByRole('button', { name: 'Edit meeting title' })).toHaveCount(0);
+    await expect(otherPage.getByText('Only the organizer can edit this meeting')).toBeVisible();
+
+    await otherContext.close();
+  });
+
   test('should cancel title editing', async ({ page }) => {
     // Start editing
     await page.getByRole('heading', { name: 'Shareable Meeting' }).hover();
