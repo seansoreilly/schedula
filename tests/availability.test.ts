@@ -4,7 +4,8 @@ import { test } from "vitest";
 import type { Availability } from "../src/integrations/api/types";
 
 import {
-  createTimeOptions,
+  createEndTimeOptions,
+  createStartTimeOptions,
   findCommonAvailabilitySlots,
   getAvailabilityDefaults,
 } from "../src/lib/availability";
@@ -44,11 +45,17 @@ test("availability defaults advance the local date across midnight", () => {
   );
 });
 
-test("time options cover every half-hour in a day", () => {
-  const options = createTimeOptions();
+test("start time options cover every half-hour in a day", () => {
+  const options = createStartTimeOptions();
   assert.equal(options.length, 48);
   assert.equal(options[0], "00:00");
   assert.equal(options.at(-1), "23:30");
+});
+
+test("end time options finish with 23:59", () => {
+  const options = createEndTimeOptions();
+  assert.equal(options[0], "00:30");
+  assert.equal(options.at(-1), "23:59");
 });
 
 test("duplicate rows from one participant do not create an overlap", () => {
