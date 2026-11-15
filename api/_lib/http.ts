@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { FieldErrors } from '../../shared/contract.js';
 
 type EndpointMethod = 'GET' | 'POST' | 'PUT';
 
@@ -47,9 +48,12 @@ export function methodNotAllowed(res: VercelResponse): void {
   res.status(405).json({ error: 'Method not allowed' });
 }
 
-export function databaseError(res: VercelResponse, error: unknown): void {
-  console.error('Supabase request failed', error);
-  res.status(500).json({ error: 'Database error' });
+export function invalidDraft(res: VercelResponse, failure: { error: string; fields: FieldErrors }): void {
+  res.status(400).json({ error: failure.error, fields: failure.fields });
+}
+
+export function meetingNotFound(res: VercelResponse): void {
+  res.status(404).json({ error: 'Meeting not found' });
 }
 
 export function internalServerError(res: VercelResponse, error: unknown): void {
