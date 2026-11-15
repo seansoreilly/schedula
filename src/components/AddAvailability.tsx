@@ -3,36 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { availabilityQueries } from "@/integrations/api/queries";
+import { parseAvailabilityDraft } from "@/integrations/api/types";
+import type { AvailabilityDraft } from "@/integrations/api/types";
 import { useToast } from "@/hooks/use-toast";
 import { classifyError, track } from "@/lib/analytics";
 import {
-  createTimeOptions,
+  createEndTimeOptions,
+  createStartTimeOptions,
+  defaultEndTime,
+  durationMinutes,
   getAvailabilityDefaults,
-  toLocalDateInputValue,
+  todayDateInputValue,
 } from "@/lib/availability";
+import { describeDraftFailure, describeSubmitError } from "@/lib/form-feedback";
 import { Plus, User, Calendar, Clock } from "lucide-react";
 
-const timeOptions = createTimeOptions();
+const startTimeOptions = createStartTimeOptions();
+const endTimeOptions = createEndTimeOptions();
 
 interface AddAvailabilityProps {
   meetingId: string;
-  onAvailabilityAdded: () => void;
+  onSubmit: (draft: AvailabilityDraft) => Promise<void>;
 }
 
-/** Length of an HH:MM time range in minutes. */
-const minutesBetween = (start: string, end: string): number => {
-  const toMinutes = (t: string): number => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  };
-  return toMinutes(end) - toMinutes(start);
-};
-
-const AddAvailability = ({
-  meetingId,
-  onAvailabilityAdded,
-}: AddAvailabilityProps) => {
+const AddAvailability = ({ meetingId, onSubmit }: AddAvailabilityProps) => {
   const [initialDefaults] = useState(getAvailabilityDefaults);
   const [participantName, setParticipantName] = useState("");
   const [availableDate, setAvailableDate] = useState(initialDefaults.availableDate);
@@ -59,53 +53,32 @@ const AddAvailability = ({
   // Auto-calculate end time when start time changes
   useEffect(() => {
     if (startTime) {
-      const [hours, minutes] = startTime.split(":").map(Number);
-      const startDate = new Date();
-      startDate.setHours(hours, minutes, 0, 0);
-
-      // Add 30 minutes
-      const endDate = new Date(startDate.getTime() + 30 * 60000);
-
-      const endHours = endDate.getHours().toString().padStart(2, "0");
-      const endMinutes = endDate.getMinutes().toString().padStart(2, "0");
-      setEndTime(`${endHours}:${endMinutes}`);
+      setEndTime(defaultEndTime(startTime));
     }
   }, [startTime]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!participantName.trim() || !availableDate || !startTime || !endTime) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (startTime >= endTime) {
-      toast({
-        title: "Invalid Time Range",
-        description: "End time must be after start time.",
-        variant: "destructive",
-      });
+    const parsed = parseAvailabilityDraft({
+      meeting_id: meetingId,
+      participant_name: participantName,
+      available_date: availableDate,
+      start_time: startTime,
+      end_time: endTime,
+    });
+    if (!parsed.ok) {
+      toast({ ...describeDraftFailure(parsed), variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await availabilityQueries.create({
-        meeting_id: meetingId,
-        participant_name: participantName.trim(),
-        available_date: availableDate,
-        start_time: startTime,
-        end_time: endTime,
-      });
+      await onSubmit(parsed.value);
 
       track("availability_added", {
-        duration_minutes: minutesBetween(startTime, endTime),
+        duration_minutes: durationMinutes(parsed.value.start_time, parsed.value.end_time),
       });
 
       toast({
@@ -118,14 +91,11 @@ const AddAvailability = ({
       setAvailableDate(defaults.availableDate);
       setStartTime(defaults.startTime);
       setEndTime(defaults.endTime);
-
-      onAvailabilityAdded();
     } catch (error) {
       console.error("Error adding availability:", error);
       track("availability_add_error", { error_type: classifyError(error) });
       toast({
-        title: "Error",
-        description: "Failed to add availability. Please try again.",
+        ...describeSubmitError(error, "Failed to add availability. Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -170,7 +140,7 @@ const AddAvailability = ({
                 value={availableDate}
                 onChange={(e) => setAvailableDate(e.target.value)}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                min={toLocalDateInputValue(new Date())}
+                min={todayDateInputValue()}
               />
             </div>
 
@@ -189,7 +159,7 @@ const AddAvailability = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select start time</option>
-                {timeOptions.map((time) => (
+                {startTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {time}
                   </option>
@@ -212,7 +182,7 @@ const AddAvailability = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Auto-filled (+30 min)</option>
-                {timeOptions.map((time) => (
+                {endTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {time}
                   </option>
