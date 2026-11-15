@@ -7,6 +7,7 @@ import {
   methodNotAllowed,
   prepareEndpoint,
 } from './http.js';
+import { rejectIfRateLimited } from './rateLimit.js';
 import type { MeetingStore } from './store.js';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void>;
@@ -40,6 +41,10 @@ export function createMeetingHandler(store: MeetingStore): Handler {
           return;
         }
         res.status(200).json(found.value);
+        return;
+      }
+
+      if (rejectIfRateLimited(req, res)) {
         return;
       }
 

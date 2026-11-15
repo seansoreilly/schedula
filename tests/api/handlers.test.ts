@@ -399,6 +399,28 @@ describe("/api/meetings/[id]", () => {
     expect(response.body).toEqual({ error: "Meeting not found" });
   });
 
+  test("PUT is rate limited per IP with 429 and Retry-After, before reaching the store", async () => {
+    const id = await seedMeeting();
+    const handler = createMeetingHandler(store);
+    const request = { method: "PUT", query: { id }, body: { title: "x" }, headers: { "x-forwarded-for": "203.0.113.7" } };
+
+    let last = await invoke(handler, request);
+    for (let i = 0; i < 40 && last.statusCode === 200; i++) {
+      last = await invoke(handler, request);
+    }
+
+    expect(last.statusCode).toBe(429);
+    expect(last.headers["retry-after"]).toBe("60");
+  });
+
+  test("GET is not rate limited", async () => {
+    const id = await seedMeeting();
+    const handler = createMeetingHandler(store);
+    for (let i = 0; i < 40; i++) {
+      expect((await invoke(handler, { method: "GET", query: { id } })).statusCode).toBe(200);
+    }
+  });
+
   test("PUT rejects an empty update with 400", async () => {
     const id = await seedMeeting();
     const spy = vi.spyOn(store, "updateMeeting");
