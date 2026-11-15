@@ -127,5 +127,6 @@ local.json
 # pnpm-lock.yaml
 
 # bun
-# bun.lockbsupabase/.temp/
+# bun.lockb
+supabase/.temp/
 supabase-local.env
