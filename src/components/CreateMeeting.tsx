@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { meetingQueries } from "@/integrations/api/queries";
-import { saveOwnerToken } from "@/lib/ownerToken";
+import { parseMeetingDraft } from "@/integrations/api/types";
 import { useToast } from "@/hooks/use-toast";
 import { classifyError, track } from "@/lib/analytics";
+import { describeDraftFailure, describeSubmitError } from "@/lib/form-feedback";
 import {
   Calendar,
   Clock,
@@ -29,24 +30,16 @@ const CreateMeeting = () => {
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !creatorName.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in both meeting title and your name.",
-        variant: "destructive",
-      });
+    const parsed = parseMeetingDraft({ title, creator_name: creatorName });
+    if (!parsed.ok) {
+      toast({ ...describeDraftFailure(parsed), variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const data = await meetingQueries.create({
-        title: title.trim(),
-        creator_name: creatorName.trim(),
-      });
-
-      saveOwnerToken(data.id, data.owner_token);
+      const data = await meetingQueries.create(parsed.value);
 
       track("meeting_created", {});
 
@@ -60,8 +53,7 @@ const CreateMeeting = () => {
       console.error("Error creating meeting:", error);
       track("meeting_create_error", { error_type: classifyError(error) });
       toast({
-        title: "Error",
-        description: "Failed to create meeting. Please try again.",
+        ...describeSubmitError(error, "Failed to create meeting. Please try again."),
         variant: "destructive",
       });
     } finally {

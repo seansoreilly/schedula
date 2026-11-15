@@ -1,70 +1,75 @@
-import { ApiError, apiClient } from "./client";
+import { ApiError, request } from "./client";
+import { getOwnerToken, saveOwnerToken } from "@/lib/ownerToken";
 import type {
   Availability,
-  AvailabilityInsert,
+  AvailabilityDraft,
   Meeting,
-  MeetingCreated,
-  MeetingInsert,
-  MeetingUpdate,
+  MeetingDraft,
+  MeetingPatch,
 } from "./types";
 import {
   parseAvailability,
   parseAvailabilityList,
   parseMeeting,
-  parseMeetingCreated,
 } from "./types";
 
+function sendJson(method: "POST" | "PUT", data: unknown): RequestInit {
+  return { method, body: JSON.stringify(data) };
+}
+
+async function nullOnNotFound<T>(call: () => Promise<T>): Promise<T | null> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function ownerHeaders(meetingId: string): Record<string, string> {
+  const token = getOwnerToken(meetingId);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const meetingQueries = {
-  async create(data: MeetingInsert): Promise<MeetingCreated> {
-    return parseMeetingCreated(await apiClient.post<unknown>("/meetings", data));
+  async create(data: MeetingDraft): Promise<Meeting> {
+    const body = await request("/meetings", sendJson("POST", data));
+    const meeting = parseMeeting(body);
+    // The server returns the owner token exactly once, on creation.
+    const token = typeof body === "object" && body !== null ? (body as Record<string, unknown>).owner_token : undefined;
+    if (typeof token === "string" && token.length > 0) {
+      saveOwnerToken(meeting.id, token);
+    }
+    return meeting;
   },
 
   async findById(id: string): Promise<Meeting | null> {
-    try {
-      return parseMeeting(
-        await apiClient.get<unknown>(`/meetings/${encodeURIComponent(id)}`)
-      );
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        return null;
-      }
-      throw error;
-    }
+    return nullOnNotFound(async () =>
+      parseMeeting(await request(`/meetings/${encodeURIComponent(id)}`))
+    );
   },
 
-  async update(
-    id: string,
-    data: MeetingUpdate,
-    ownerToken: string
-  ): Promise<Meeting | null> {
-    try {
-      return parseMeeting(
-        await apiClient.put<unknown>(
-          `/meetings/${encodeURIComponent(id)}`,
-          data,
-          { Authorization: `Bearer ${ownerToken}` }
-        )
-      );
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        return null;
-      }
-      throw error;
-    }
+  async update(id: string, data: MeetingPatch): Promise<Meeting | null> {
+    return nullOnNotFound(async () =>
+      parseMeeting(
+        await request(`/meetings/${encodeURIComponent(id)}`, {
+          ...sendJson("PUT", data),
+          headers: ownerHeaders(id),
+        })
+      )
+    );
   },
 };
 
 export const availabilityQueries = {
-  async create(data: AvailabilityInsert): Promise<Availability> {
-    return parseAvailability(
-      await apiClient.post<unknown>("/availability", data)
-    );
+  async create(data: AvailabilityDraft): Promise<Availability> {
+    return parseAvailability(await request("/availability", sendJson("POST", data)));
   },
 
   async findByMeetingId(meetingId: string): Promise<Availability[]> {
     const searchParams = new URLSearchParams({ meeting_id: meetingId });
-    return parseAvailabilityList(
-      await apiClient.get<unknown>(`/availability?${searchParams.toString()}`)
-    );
+    return parseAvailabilityList(await request(`/availability?${searchParams.toString()}`));
   },
 };
