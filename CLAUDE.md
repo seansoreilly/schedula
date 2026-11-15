@@ -42,6 +42,8 @@ Schedula is a meeting scheduling application with a React frontend and Vercel se
 - `POST /api/meetings` - create a meeting
 - `GET` and `PUT /api/meetings/:id` - read or update a meeting
 - `GET /api/availability?meeting_id=:id` and `POST /api/availability` - list or add availability
+- Entry files in `api/` only wire a route factory (`api/_lib/*-route.ts`, HTTP policy) to the Supabase adapter of the `MeetingStore` seam (`api/_lib/store.ts`); `api/_lib/memory-store.ts` is the test adapter
+- `shared/contract.ts` is the one definition of valid drafts and responses, used by both `api/` and `src/`. Relative imports in `api/` and `shared/` must end in `.js` (Vercel's ESM runtime; `tests/api/esm-imports.test.ts` enforces it)
 
 ### Database Architecture
 
@@ -60,7 +62,8 @@ Schedula is a meeting scheduling application with a React frontend and Vercel se
 **Availability Management**:
 1. `AddAvailability.tsx` collects time slots
 2. `AvailabilityDisplay.tsx` shows consolidated view with overlap detection
-3. The meeting view refreshes data through the API client after changes
+3. `src/hooks/use-meeting-page.ts` (over the React-free `src/lib/meeting-page.ts`) owns loading, renaming and adding availability; a new row is appended locally, not re-fetched
+4. All time-of-day logic lives in `src/lib/availability.ts`
 
 **Core Components**:
 - `CreateMeeting.tsx` - Hero landing page with meeting creation form
@@ -78,7 +81,7 @@ Playwright E2E tests in `/e2e/` directory covering:
 - Responsive design (`responsive-design.spec.ts`)
 - API integration (`api-integration.spec.ts`)
 
-Playwright starts the API server (:3001) and Vite (:3000) itself. Unit tests (vitest) live in `src/**/*.test.ts` and `tests/` (API handlers with a mocked Supabase client, request validation, response parsers, availability logic).
+Playwright starts the API server (:3001) and Vite (:3000) itself. Unit tests (vitest) live in `src/**/*.test.ts` and `tests/` (API handlers against the in-memory `MeetingStore`, the Supabase adapter with a mocked client, the shared contract, availability and meeting-page logic).
 
 ## Important Development Notes
 
