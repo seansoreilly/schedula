@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Least privilege: CI only reads the repo (the default GITHUB_TOKEN may be read-write).
+permissions:
+  contents: read
+
 jobs:
   unit-and-build:
     timeout-minutes: 15

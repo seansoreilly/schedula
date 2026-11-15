@@ -6,6 +6,11 @@ on:
     - cron: '0 2 */5 * *'
   workflow_dispatch: # Allows manual triggering
 
+# Least privilege: checkout needs contents:read; the failure step opens an issue.
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   database-read:
     runs-on: ubuntu-24.04
