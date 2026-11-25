@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { parseAvailability, parseAvailabilityList, parseMeeting } from '../../shared/contract.js';
+import { MEETING_PUBLIC_COLUMNS } from './ownerToken.js';
 import { MAX_AVAILABILITY_ROWS_PER_MEETING } from './store.js';
 import type { MeetingStore } from './store.js';
 
@@ -43,8 +44,12 @@ function getClient(): ReturnType<typeof createSchemaClient> {
 }
 
 export const supabaseStore: MeetingStore = {
-  async createMeeting(draft) {
-    const { data, error } = await getClient().from('meetings').insert(draft).select().single();
+  async createMeeting(draft, ownerTokenHash) {
+    const { data, error } = await getClient()
+      .from('meetings')
+      .insert(ownerTokenHash ? { ...draft, owner_token_hash: ownerTokenHash } : draft)
+      .select(MEETING_PUBLIC_COLUMNS)
+      .single();
     if (error) {
       throw error;
     }
@@ -52,7 +57,7 @@ export const supabaseStore: MeetingStore = {
   },
 
   async getMeeting(id) {
-    const { data, error } = await getClient().from('meetings').select('*').eq('id', id).single();
+    const { data, error } = await getClient().from('meetings').select(MEETING_PUBLIC_COLUMNS).eq('id', id).single();
     if (error) {
       if (error.code === NO_ROWS_CODE) {
         return { kind: 'not-found' };
@@ -62,12 +67,28 @@ export const supabaseStore: MeetingStore = {
     return { kind: 'ok', value: parseMeeting(data) };
   },
 
+  async getOwnerTokenHash(id) {
+    const { data, error } = await getClient()
+      .from('meetings')
+      .select('owner_token_hash')
+      .eq('id', id)
+      .single();
+    if (error) {
+      if (error.code === NO_ROWS_CODE) {
+        return { kind: 'not-found' };
+      }
+      throw error;
+    }
+    const hash: unknown = data?.owner_token_hash;
+    return { kind: 'ok', value: typeof hash === 'string' ? hash : null };
+  },
+
   async updateMeeting(id, patch) {
     const { data, error } = await getClient()
       .from('meetings')
       .update({ ...patch, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
+      .select(MEETING_PUBLIC_COLUMNS)
       .single();
     if (error) {
       if (error.code === NO_ROWS_CODE) {

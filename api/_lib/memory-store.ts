@@ -6,13 +6,23 @@ import type { MeetingStore } from './store.js';
 export function createMemoryStore(): MeetingStore {
   const meetings = new Map<string, Meeting>();
   const availability: Availability[] = [];
+  const tokenHashes = new Map<string, string>();
 
   return {
-    async createMeeting(draft) {
+    async createMeeting(draft, ownerTokenHash) {
       const now = new Date().toISOString();
       const meeting: Meeting = { id: crypto.randomUUID(), ...draft, created_at: now, updated_at: now };
       meetings.set(meeting.id, meeting);
+      if (ownerTokenHash) {
+        tokenHashes.set(meeting.id, ownerTokenHash);
+      }
       return { ...meeting };
+    },
+
+    async getOwnerTokenHash(id) {
+      return meetings.has(id)
+        ? { kind: 'ok', value: tokenHashes.get(id) ?? null }
+        : { kind: 'not-found' };
     },
 
     async getMeeting(id) {

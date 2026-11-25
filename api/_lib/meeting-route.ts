@@ -7,6 +7,7 @@ import {
   methodNotAllowed,
   prepareEndpoint,
 } from './http.js';
+import { ownerTokenMatches, readOwnerToken } from './ownerToken.js';
 import type { MeetingStore } from './store.js';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void>;
@@ -47,6 +48,23 @@ export function createMeetingHandler(store: MeetingStore): Handler {
       if (!patch.ok) {
         invalidDraft(res, patch);
         return;
+      }
+
+      const stored = await store.getOwnerTokenHash(meetingId);
+      if (stored.kind === 'not-found') {
+        meetingNotFound(res);
+        return;
+      }
+      if (stored.value !== null) {
+        const presentedToken = readOwnerToken(req);
+        if (presentedToken === null || !ownerTokenMatches(presentedToken, stored.value)) {
+          res.status(403).json({ error: 'Invalid or missing owner token' });
+          return;
+        }
+      } else {
+        // Legacy meeting created before owner tokens: stays editable by anyone with the link so
+        // existing links keep working. Logged for visibility.
+        console.warn('Legacy meeting without owner token edited', { meetingId });
       }
 
       const updated = await store.updateMeeting(meetingId, patch.value);
